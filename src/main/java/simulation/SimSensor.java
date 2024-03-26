@@ -3,48 +3,55 @@ package simulation;
 import kafka.KafkaProd;
 
 import java.util.Random;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SimSensor {
+public class SimSensor implements Runnable {
     private static final Logger log = Logger.getLogger(SimSensor.class.getName());
-    private final KafkaProd producer;
-    private final String KEY = "temperature";
+    private final KafkaProd PRODUCER;
+    private final String KEY;
     private final int TICKS;
-    private double temp;
+    private double temperature;
     private boolean heating = true;
 
-    public SimSensor(int ticks, double temp, String topic, String bootstrap) {
+    public SimSensor(int ticks, double temperature, String topic, String bootstrap, String kafkaKey) {
         TICKS = ticks;
-        producer = new KafkaProd(topic, bootstrap);
-        this.temp = temp;
+        PRODUCER = new KafkaProd(topic, bootstrap);
+        KEY = kafkaKey;
+        this.temperature = temperature;
     }
 
-    public void setTemp(double temp) {
-        log.info("New temperatur: " + temp);
-        this.temp = temp;
+    public void setTemperature(double temperature) {
+        log.info("New temperatur: " + temperature);
+        this.temperature = temperature;
     }
 
-    public double getTemp(){
-        return temp;
+    public double getTemperature(){
+        return temperature;
     }
 
-    public void startSensorSimulation() throws InterruptedException{
+    public void setHeating(boolean heating) {
+        this.heating = heating;
+    }
+
+    @Override
+    public void run() {
         log.info("Start Sensor Simulation");
-
         while (true){
-            Thread.sleep(TICKS);
-            double randomNummer = new Random().nextDouble() * 10;
+            try {
+                Thread.sleep(TICKS);
+                double randomNummer = new Random().nextDouble() * 10;
 
-            if (randomNummer > 9){
-                setTemp(100);
-            } else if (randomNummer < 1) {
-                setTemp(-1);
-            } else {
-                setTemp(heating ? getTemp() + new Random().nextDouble() : getTemp() - new Random().nextDouble());
+                if (randomNummer > 9){
+                    setTemperature(100);
+                } else if (randomNummer < 1) {
+                    setTemperature(-1);
+                } else {
+                    setTemperature(heating ? getTemperature() + new Random().nextDouble() : getTemperature() - new Random().nextDouble());
+                }
+                PRODUCER.send(KEY, Double.toString(getTemperature()));
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-            // TODO: send temperature to KAFKA
-
 
         }
     }
