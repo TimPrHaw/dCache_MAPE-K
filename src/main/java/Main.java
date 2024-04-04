@@ -2,6 +2,7 @@ import kafka.KafkaListener;
 import kafka.KafkaProd;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
+import phases.analyze.Analyze;
 import simulation.SimSensor;
 
 import java.time.Duration;
@@ -22,7 +23,12 @@ public class Main {
             consumer.run();
         }).start();
 
-
+        /**
+        new Thread(() -> {
+            Analyze analyze = new Analyze();
+            analyze.run();
+        }).start();
+*/
         new Thread(() -> {
             SimSensor simSensor = new SimSensor(simTicksInMilliSec, simStartTemp, topic, bootstrapServer, key);
             simSensor.run();

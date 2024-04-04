@@ -1,22 +1,28 @@
 package JMS;
 
+import kafka.KafkaListener;
 import org.apache.activemq.ActiveMQConnection;
+import org.apache.activemq.ActiveMQConnectionFactory;
+
 import javax.jms.*;
+import java.util.logging.Logger;
 
 // TODO: ActiveMQ als Docker einbinden, zum Debugging Lokaleversion verwenden
 public class SynchConsumer {
+    private static final Logger log = Logger.getLogger(SynchConsumer.class.getName());
     private static final int DEFAULT_ACKNOWLEDGE = Session.AUTO_ACKNOWLEDGE;
     private static final boolean DEFAULT_TRANSACTED = false;
     private ConnectionFactory connectionFactory;
     private Connection connection;
     private Session session;
     private Destination destination;
-    private int acknowledged;
-    private boolean transacted;
-    private String queueName;
-    private String brokerURL;
+    private MessageConsumer consumer;
+    private int acknowledged = DEFAULT_ACKNOWLEDGE;
+    private boolean transacted = DEFAULT_TRANSACTED;
+    private final String brokerURL;
     private String username;
     private String password;
+    private String selector;
 
     // TODO: 1. Synchronen Consumer fertig machen. 2 Asynchronen Consuumer (implements MessageListener) erstellen
 
@@ -32,8 +38,20 @@ public class SynchConsumer {
         this(ActiveMQConnection.DEFAULT_BROKER_URL);
     }
 
+    public void setup(Boolean queueBool, String queueName) throws JMSException {
+        setConnectionFactory(brokerURL, username, password);
+        setConnection();
+        setSession(transacted, acknowledged);
+        setDestination(queueBool, queueName);
+        setMessageConsumer();
+    }
 
-    /**
+    public Object run() throws JMSException {
+        var t = consumer.receive();
+        log.info(this.getClass().getName() + " received " + t);
+        return t;
+    }
+
     private void setConnectionFactory(String brokerURL, String username, String password){
         if (!username.isEmpty() && !password.isEmpty()){
             connectionFactory = new ActiveMQConnectionFactory(username, password, brokerURL);
@@ -52,22 +70,32 @@ public class SynchConsumer {
         session = connection.createSession(transacted, acknowledged);
     }
 
-    private void setSession(boolean transacted) throws JMSException {
-        session = connection.createSession(transacted, DEFAULT_ACKNOWLEDGE);
-    }
-    private void setSession() throws JMSException {
-        session = connection.createSession(DEFAULT_TRANSACTED, DEFAULT_ACKNOWLEDGE);
-    }
-
     private void setDestination(boolean isItAQueue, String destinationName) throws JMSException {
         if(isItAQueue){
-            session.createQueue(destinationName);
+            destination = session.createQueue(destinationName);
         } else {
-            session.createTopic(destinationName);
+            destination = session.createTopic(destinationName);
+        }
+    }
+    private void setMessageConsumer() throws JMSException {
+        if (selector == null) {
+            consumer = session.createConsumer(destination);
+        } else {
+            consumer = session.createConsumer(destination, selector);
         }
     }
 
-     */
+    public void setAcknowledged(int acknowledged) {
+        this.acknowledged = acknowledged;
+    }
+
+    public void setTransacted(boolean transacted) {
+        this.transacted = transacted;
+    }
+
+    public void setSelector(String selector) {
+        this.selector = selector;
+    }
 
     /**
     private void setMessageConsumer

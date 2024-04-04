@@ -9,15 +9,18 @@
       <option name="ignoredModules">
         <list>
           <option value="KafkaTest" />
+          <option value="dCache_MAPE-K" />
         </list>
       </option>
       <option name="ignoredPackages">
         <list>
           <option value="org.apache.commons:commons-compress:1.24.0" />
+          <option value="org.apache.commons:commons-compress:1.24.0" />
         </list>
       </option>
       <option name="ignoredReasons">
         <list>
+          <option value="Not exploitable" />
           <option value="Not exploitable" />
         </list>
       </option>

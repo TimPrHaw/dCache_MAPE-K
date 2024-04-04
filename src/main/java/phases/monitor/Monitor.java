@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class Monitor {
-    private static final Logger log = Logger.getLogger(KafkaListener.class.getName());
+    private static final Logger log = Logger.getLogger(Monitor.class.getName());
     //private final KafkaListener consumer;
     private final List<Double> list;
     private final int LISTSIZE = 10;
@@ -29,7 +29,8 @@ public class Monitor {
         }
 
     }
-    // TODO: JMS EINRICHTEN UND kommunikation mit Analyze herstellen
+
+
 
     public List<Double> getList() {
         return list;
