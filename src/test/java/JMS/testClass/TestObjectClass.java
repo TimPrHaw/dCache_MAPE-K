@@ -1,4 +1,4 @@
-package JMS.producer;
+package JMS.testClass;
 
 public class TestObjectClass implements java.io.Serializable{
     private int number;
@@ -23,5 +23,13 @@ public class TestObjectClass implements java.io.Serializable{
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String toString() {
+        return "TestObjectClass{" +
+                "number=" + number +
+                ", name='" + name + '\'' +
+                '}';
     }
 }

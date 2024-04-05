@@ -1,14 +1,13 @@
 package JMS;
 
-import kafka.KafkaListener;
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.activemq.command.ActiveMQMessage;
 
 import javax.jms.*;
+import java.util.*;
 import java.util.logging.Logger;
 
-// TODO: ActiveMQ als Docker einbinden, zum Debugging Lokaleversion verwenden
+
 public class SynchConsumer {
     private static final Logger log = Logger.getLogger(SynchConsumer.class.getName());
     private static final int DEFAULT_ACKNOWLEDGE = Session.AUTO_ACKNOWLEDGE;
@@ -25,7 +24,6 @@ public class SynchConsumer {
     private String password;
     private String selector;
 
-    // TODO: 1. Synchronen Consumer fertig machen. 2 Asynchronen Consuumer (implements MessageListener) erstellen
 
     public SynchConsumer(String brokerURL, String username, String password) throws JMSException {
         this.brokerURL = brokerURL;
@@ -47,10 +45,102 @@ public class SynchConsumer {
         setMessageConsumer();
     }
 
-    public Message run() throws JMSException {
+    public Message runGetMessage() throws JMSException {
         Message t = consumer.receive();
         log.info(this.getClass().getName() + " received " + t.getClass().getSimpleName() + " payload: " + ((TextMessage)t).getText());
         return t;
+    }
+
+    public <T> T run() throws JMSException {
+        Message message = consumer.receive();
+        if (message instanceof TextMessage) {
+            String payload = processTextMessage(message);
+            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + payload);
+            return (T) payload;
+        } else if (message instanceof BytesMessage) {
+            byte[] payload = processByteMessage(message);
+            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + Arrays.toString(payload));
+            return (T) payload;
+        } else if (message instanceof MapMessage) {
+            Map<String, Object> payload = processMapMassage(message);
+            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + payload);
+            return (T) payload;
+        } else if (message instanceof ObjectMessage) {
+            var payload = processObjectMessage(message);
+            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: Object" );
+            return (T) payload;
+        } else if (message instanceof StreamMessage) {
+            var payload = processStreamMessage(message);
+            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + Arrays.toString(payload));
+            return (T) payload;
+        }
+        log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: null");
+        return (T) message;
+    }
+
+    public void close() throws JMSException {
+        if (consumer != null) {
+            consumer.close();
+            consumer = null;
+        }
+        if (session != null){
+            session.close();
+            session = null;
+        }
+        if (connection != null){
+            connection.close();
+            connection = null;
+        }
+    }
+
+    public void setAcknowledged(int acknowledged) {
+        this.acknowledged = acknowledged;
+    }
+
+    public void setTransacted(boolean transacted) {
+        this.transacted = transacted;
+    }
+
+    public void setSelector(String selector) {
+        this.selector = selector;
+    }
+
+    private String processTextMessage(Message message) throws JMSException {
+        return ((TextMessage) message).getText();
+    }
+
+    private byte[] processByteMessage(Message message) throws JMSException{
+        byte[] payload = new byte[(int) ((BytesMessage) message).getBodyLength()];
+        ((BytesMessage) message).readBytes(payload);
+        return payload;
+    }
+
+    private Map<String, Object> processMapMassage(Message message) throws JMSException {
+        Map<String, Object> map = new HashMap<>();
+        Enumeration<String> keys = ((MapMessage) message).getMapNames();
+        while (keys.hasMoreElements()){
+            String key = keys.nextElement();
+            map.put(key, ((MapMessage) message).getObject(key));
+        }
+        return map;
+    }
+
+    private Object processObjectMessage(Message message) throws JMSException{
+        return ((ObjectMessage)message);
+    }
+
+    private Object[] processStreamMessage(Message message) throws JMSException {
+        StreamMessage streamMessage = (StreamMessage) message;
+        ArrayList<Object> payload = new ArrayList<>();
+        while (true){
+            try{
+                payload.add(streamMessage.readObject());
+            }
+            catch (Exception e){
+                break;
+            }
+        }
+        return payload.toArray();
     }
 
     private void setConnectionFactory(String brokerURL, String username, String password){
@@ -59,7 +149,8 @@ public class SynchConsumer {
         } else {
             connectionFactory = new ActiveMQConnectionFactory(brokerURL);
         }
-        // TODO: Hier muss vielleicht noch was hin
+        ((ActiveMQConnectionFactory)connectionFactory).setTrustAllPackages(true);
+        // TODO: Hier muss vielleicht noch etwas hin
     }
 
     private void setConnection() throws JMSException {
@@ -85,44 +176,4 @@ public class SynchConsumer {
             consumer = session.createConsumer(destination, selector);
         }
     }
-
-    public void setAcknowledged(int acknowledged) {
-        this.acknowledged = acknowledged;
-    }
-
-    public void setTransacted(boolean transacted) {
-        this.transacted = transacted;
-    }
-
-    public void setSelector(String selector) {
-        this.selector = selector;
-    }
-
-    /**
-    private void setMessageConsumer
-
-
-    try {
-        // Nachrichtenempfänger erstellen
-        MessageConsumer consumer = session.createConsumer(destination);
-
-        // Nachricht empfangen
-        Message message = consumer.receive();
-
-        if (message instanceof TextMessage) {
-            TextMessage textMessage = (TextMessage) message;
-            System.out.println("Nachricht empfangen: " + textMessage.getText());
-        } else {
-            System.out.println("Ungültige Nachricht empfangen");
-        }
-
-        // Ressourcen schließen
-        consumer.close();
-        session.close();
-        connection.close();
-    } catch (JMSException e) {
-        e.printStackTrace();
-    }
-
-     */
 }

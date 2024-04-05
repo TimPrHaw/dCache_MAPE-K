@@ -2,6 +2,7 @@ package JMS;
 
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.ActiveMQQueueSession;
 import phases.analyze.Analyze;
 
 import javax.jms.*;
@@ -71,9 +72,10 @@ public class Producer {
         } else {
             throw new IllegalStateException("Unknown DataType: " + payload.getClass());
         }
-        log.info(this.getClass().getName() + " sending message: " + message);
+        log.info(this.getClass().getName() + " sending message: " + message.getClass().getSimpleName());
         producer.send(destination, message);
     }
+
     public void close() throws JMSException {
         if (producer != null) {
             producer.close();
@@ -101,6 +103,7 @@ public class Producer {
         } else {
             connectionFactory = new ActiveMQConnectionFactory(brokerURL);
         }
+        ((ActiveMQConnectionFactory)connectionFactory).setTrustAllPackages(true);
         // TODO: Hier muss vielleicht noch was hin
     }
 
@@ -163,7 +166,8 @@ public class Producer {
     }
 
     private ObjectMessage setObjectMessage(Object payload) throws JMSException {
-        ObjectMessage objectMessage = session.createObjectMessage((Serializable) payload);
+        ObjectMessage objectMessage = session.createObjectMessage();
+        objectMessage.setObject((Serializable) payload);
         return objectMessage;
     }
 

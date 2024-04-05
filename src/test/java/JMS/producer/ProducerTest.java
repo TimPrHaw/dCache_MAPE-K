@@ -69,6 +69,7 @@ public class ProducerTest {
         close(testConsumer, testSession, testConnection);
     }
 
+    // TODO: TOPIC TEST FEHLERHAFT
     @Test
     public void setupNoTransactionTopic_SendText_thenConsumeMessage() throws JMSException{
         Producer testedProducer = new Producer();
