@@ -3,8 +3,10 @@ import kafka.KafkaProd;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import phases.analyze.Analyze;
+import phases.plan.Plan;
 import simulation.SimSensor;
 
+import javax.jms.JMSException;
 import java.time.Duration;
 
 public class Main {
@@ -23,12 +25,26 @@ public class Main {
             consumer.run();
         }).start();
 
-        /**
         new Thread(() -> {
-            Analyze analyze = new Analyze();
-            analyze.run();
+            Analyze analyze = null;
+            try {
+                analyze = new Analyze(true, "analyze-queue", "plan-queue");
+                analyze.run();
+            } catch (JMSException e) {
+                throw new RuntimeException(e);
+            }
         }).start();
-*/
+
+        new Thread(() -> {
+            Plan plan = null;
+            try {
+                plan = new Plan();
+                plan.run();
+            } catch (JMSException e) {
+                throw new RuntimeException(e);
+            }
+        }).start();
+
         new Thread(() -> {
             SimSensor simSensor = new SimSensor(simTicksInMilliSec, simStartTemp, topic, bootstrapServer, key);
             simSensor.run();

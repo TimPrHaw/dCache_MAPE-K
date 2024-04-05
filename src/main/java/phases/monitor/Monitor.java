@@ -1,7 +1,9 @@
 package phases.monitor;
 
+import JMS.Producer;
 import kafka.KafkaListener;
 
+import javax.jms.JMSException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -11,9 +13,19 @@ public class Monitor {
     //private final KafkaListener consumer;
     private final List<Double> list;
     private final int LISTSIZE = 10;
+    private Producer producer;
 
     public Monitor(){
         list = new LinkedList<>();
+        try {
+            setProducer();
+        }
+        catch (JMSException ex) {}
+    }
+
+    public void setProducer() throws JMSException {
+        producer = new Producer();
+        producer.setup(true, "MonitorQueue");
     }
 
     public void addList(String element){
@@ -27,10 +39,14 @@ public class Monitor {
             log.info("Ungültiges Format für die Umwandlung in einen double-Wert: " + element);
             e.printStackTrace();
         }
-
+        pushToJMS();
     }
 
-
+    private void pushToJMS(){
+        try {
+            producer.sendMessage(list);
+        } catch (JMSException ex) {}
+    }
 
     public List<Double> getList() {
         return list;

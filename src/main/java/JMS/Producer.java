@@ -2,14 +2,17 @@ package JMS;
 
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import phases.analyze.Analyze;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
 import java.io.Serializable;
 import java.util.Map;
+import java.util.logging.Logger;
 
 
 public class Producer {
+    private static final Logger log = Logger.getLogger(Producer.class.getName());
     private static final int DEFAULT_ACKNOWLEDGE = Session.AUTO_ACKNOWLEDGE;
     private static final boolean DEFAULT_TRANSACTED = false;
     private ConnectionFactory connectionFactory;
@@ -40,6 +43,13 @@ public class Producer {
         setSession(transacted, acknowledged);
         setDestination(queueBool, destinationName);
         setMessageProducer();
+        log.info(this.getClass().getName()
+                + " setup setting: Broker URL: " + brokerURL
+                + " , Username: " + username
+                + " , transacted: " + transacted
+                + " , Acknowledged: " + acknowledged
+                + " , queue bool: " + queueBool
+                + " , Destination: " + destinationName);
     }
 
     public void setup(boolean queueBool, String destinationName) throws JMSException {
@@ -61,6 +71,7 @@ public class Producer {
         } else {
             throw new IllegalStateException("Unknown DataType: " + payload.getClass());
         }
+        log.info(this.getClass().getName() + " sending message: " + message);
         producer.send(destination, message);
     }
     public void close() throws JMSException {

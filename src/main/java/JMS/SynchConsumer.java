@@ -3,6 +3,7 @@ package JMS;
 import kafka.KafkaListener;
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.apache.activemq.command.ActiveMQMessage;
 
 import javax.jms.*;
 import java.util.logging.Logger;
@@ -46,14 +47,14 @@ public class SynchConsumer {
         setMessageConsumer();
     }
 
-    public Object run() throws JMSException {
-        var t = consumer.receive();
-        log.info(this.getClass().getName() + " received " + t);
+    public Message run() throws JMSException {
+        Message t = consumer.receive();
+        log.info(this.getClass().getName() + " received " + t.getClass().getSimpleName() + " payload: " + ((TextMessage)t).getText());
         return t;
     }
 
     private void setConnectionFactory(String brokerURL, String username, String password){
-        if (!username.isEmpty() && !password.isEmpty()){
+        if (username != null && password != null){
             connectionFactory = new ActiveMQConnectionFactory(username, password, brokerURL);
         } else {
             connectionFactory = new ActiveMQConnectionFactory(brokerURL);
