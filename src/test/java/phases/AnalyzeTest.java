@@ -1,14 +1,9 @@
 package phases;
 
-import JMS.Producer;
 import org.apache.activemq.*;
 
 import javax.jms.*;
 import javax.jms.Message;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
@@ -17,7 +12,7 @@ import org.junit.Test;
 import phases.analyze.Analyze;
 
 
-public class analyzeTest {
+public class AnalyzeTest {
 
     private String queueName1 = "analyze-test-queue-in";
     private String queueName2 = "analyze-test-queue-out";

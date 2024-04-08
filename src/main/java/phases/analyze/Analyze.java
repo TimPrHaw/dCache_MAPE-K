@@ -25,7 +25,7 @@ public class Analyze {
 
     public void run() throws JMSException {
         while (true) {
-            Message abc = consumer.run();
+            Message abc = consumer.runGetMessage();
             String ttt = ((TextMessage) abc).getText();
             doThings(ttt);
             log.info(this.getClass().getSimpleName() + " send: " + value);
@@ -45,7 +45,6 @@ public class Analyze {
                     resultList.add(value);
                 }
             } catch (NumberFormatException e) {
-                // Handle invalid double values
                 System.err.println("Invalid double value: " + element);
             }
         }
