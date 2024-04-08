@@ -23,6 +23,7 @@ public class SynchConsumer {
     private String username;
     private String password;
     private String selector;
+    private long timeout = 0;
 
 
     public SynchConsumer(String brokerURL, String username, String password) throws JMSException {
@@ -46,35 +47,35 @@ public class SynchConsumer {
     }
 
     public Message runGetMessage() throws JMSException {
-        Message t = consumer.receive();
-        log.info(this.getClass().getName() + " received " + t.getClass().getSimpleName() + " payload: " + ((TextMessage)t).getText());
+        Message t = consumer.receive(timeout);
+        //log.info(this.getClass().getName() + " received " + t.getClass().getSimpleName() + " payload: " + ((TextMessage)t).getText());
         return t;
     }
 
     public <T> T run() throws JMSException {
-        Message message = consumer.receive();
+        Message message = consumer.receive(timeout);
         if (message instanceof TextMessage) {
             String payload = processTextMessage(message);
-            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + payload);
+            //log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + payload);
             return (T) payload;
         } else if (message instanceof BytesMessage) {
             byte[] payload = processByteMessage(message);
-            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + Arrays.toString(payload));
+            //log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + Arrays.toString(payload));
             return (T) payload;
         } else if (message instanceof MapMessage) {
             Map<String, Object> payload = processMapMassage(message);
-            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + payload);
+            //log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + payload);
             return (T) payload;
         } else if (message instanceof ObjectMessage) {
             var payload = processObjectMessage(message);
-            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: Object" );
+            //log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: Object" );
             return (T) payload;
         } else if (message instanceof StreamMessage) {
             var payload = processStreamMessage(message);
-            log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + Arrays.toString(payload));
+            //log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: " + Arrays.toString(payload));
             return (T) payload;
         }
-        log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: null");
+        //log.info(this.getClass().getName() + " received " + message.getClass().getSimpleName() + " payload: null");
         return (T) message;
     }
 
@@ -175,5 +176,9 @@ public class SynchConsumer {
         } else {
             consumer = session.createConsumer(destination, selector);
         }
+    }
+
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
     }
 }

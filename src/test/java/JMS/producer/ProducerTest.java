@@ -19,6 +19,31 @@ public class ProducerTest {
     private String queueName = "test-queue";
 
     @Test
+    public void setupNoTransactionQueue_SendDouble_thenConsumeMessage() throws JMSException{
+        Producer testedProducer = new Producer();
+        testedProducer.setup(false, true, queueName);
+        Double testInput = 22.2;
+        testedProducer.sendMessage(testInput);
+
+        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
+        testConnection.start();
+        Session testSession = testConnection.createSession();
+        Destination testDestination = testSession.createQueue(queueName);
+        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
+        Message consumedMessage = testConsumer.receive();
+
+        Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
+
+        Assert.assertFalse(consumedMessage instanceof BytesMessage);
+        Assert.assertFalse(consumedMessage instanceof MapMessage);
+
+        // Close producer and consumer
+        testedProducer.close();
+        close(testConsumer, testSession, testConnection);
+    }
+
+
+    @Test
     public void setupNoTransactionQueue_SendText_thenConsumeMessage() throws JMSException{
         Producer testedProducer = new Producer();
         testedProducer.setup(false, true, queueName);

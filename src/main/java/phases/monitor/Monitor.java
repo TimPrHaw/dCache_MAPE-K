@@ -12,7 +12,7 @@ public class Monitor {
     private static final Logger log = Logger.getLogger(Monitor.class.getName());
     //private final KafkaListener consumer;
     private final List<Double> list;
-    private final int LISTSIZE = 10;
+    private final int LISTSIZE = 4;
     private Producer producer;
 
     public Monitor(){
@@ -25,7 +25,7 @@ public class Monitor {
 
     public void setProducer() throws JMSException {
         producer = new Producer();
-        producer.setup(true, "MonitorQueue");
+        producer.setup(true, "analyze-queue");
     }
 
     public void addList(String element){
@@ -44,11 +44,12 @@ public class Monitor {
 
     private void pushToJMS(){
         try {
-            producer.sendMessage(list);
+            producer.sendMessage(getList());
         } catch (JMSException ex) {}
     }
 
-    public List<Double> getList() {
-        return list;
+    public String getList() {
+        String t = list.toString();
+        return t;
     }
 }

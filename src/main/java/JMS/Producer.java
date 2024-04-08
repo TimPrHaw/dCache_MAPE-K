@@ -72,7 +72,7 @@ public class Producer {
         } else {
             throw new IllegalStateException("Unknown DataType: " + payload.getClass());
         }
-        log.info(this.getClass().getName() + " sending message: " + message.getClass().getSimpleName());
+        //log.info(this.getClass().getName() + " sending message: " + message.getClass().getSimpleName());
         producer.send(destination, message);
     }
 
