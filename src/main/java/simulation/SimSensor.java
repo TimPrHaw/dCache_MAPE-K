@@ -1,6 +1,6 @@
 package simulation;
 
-import JMS.SynchConsumer;
+import JMS.Consumer;
 import kafka.KafkaProd;
 
 import javax.jms.JMSException;
@@ -15,13 +15,13 @@ public class SimSensor implements Runnable{
     private final int TICKS;
     private double temperature;
     private boolean heating = true;
-    private SynchConsumer consumer;
+    private Consumer consumer;
     private boolean lastMsgReset;
 
     public SimSensor(int ticks, double temperature, String topic, String bootstrap, String kafkaKey ,boolean queueBool, String inputQueue) throws JMSException {
         TICKS = ticks;
         PRODUCER = new KafkaProd(topic, bootstrap);
-        this.consumer = new SynchConsumer();
+        this.consumer = new Consumer();
         KEY = kafkaKey;
         this.temperature = temperature;
         this.consumer.setup(queueBool, inputQueue);

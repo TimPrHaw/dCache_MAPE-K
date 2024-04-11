@@ -1,41 +1,26 @@
 package simulation;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.kafka.common.metrics.Sensor;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import phases.execute.Execute;
 
 import javax.jms.*;
 
 public class SimActorTest {
-    private String queueName1 = "actor-test-queue-in";
-    private String queueName2 = "actor-test-queue-out";
+    private String queueIn = "actor-test-queue-in";
+    private String queueOut = "actor-test-queue-out";
     private int resetval = 20;
 
     @Test
     public void testReset() throws JMSException, InterruptedException {
-
         int textMessage = -1;
+        SimActor simActor = new SimActor(true, queueIn, queueOut, resetval);
+        Session producerSession = testProducerSession();
+        MessageProducer testMessageProducer = createTestMessageProducer(queueIn,producerSession);
+        MessageConsumer testMessageConsumer = createTestMessageConsumer(queueOut);
 
-        SimActor simActor = new SimActor(true, queueName1, queueName2, resetval);
-
-        // Test Producer
-        Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
-        testProducerConnection.start();
-        Session testPrducerSession = testProducerConnection.createSession();
-        Destination testProducerDestination = testPrducerSession.createQueue(queueName1);
-        MessageProducer testProducer = testPrducerSession.createProducer(testProducerDestination);
-
-        // Test consumer
-        Connection testConsumerConnection = new ActiveMQConnectionFactory().createConnection();
-        testConsumerConnection.start();
-        Session testConsumerSession = testConsumerConnection.createSession();
-        Destination testConsumerDestination = testConsumerSession.createQueue(queueName2);
-        MessageConsumer testConsumer = testConsumerSession.createConsumer(testConsumerDestination);
-
-
-        testProducer.send(testPrducerSession.createObjectMessage(textMessage));
+        testMessageProducer.send(producerSession.createObjectMessage(textMessage));
 
         Thread simActorThread = new Thread(() -> {
             try {
@@ -46,36 +31,24 @@ public class SimActorTest {
         });
         simActorThread.start();
 
-        Message incomingMessage = testConsumer.receive(1000);
+        Message incomingMessage = testMessageConsumer.receive(1000);
         var msg = ((ObjectMessage) incomingMessage).getObject();
         Assert.assertEquals(20, msg);
 
-        testProducerConnection.close();
+        testMessageProducer.close();
+        testMessageConsumer.close();
+        producerSession.close();
     }
 
     @Test
     public void testHeating() throws JMSException, InterruptedException {
-
         int textMessage = 2;
+        SimActor simActor = new SimActor(true, queueIn, queueOut, resetval);
+        Session producerSession = testProducerSession();
+        MessageProducer testMessageProducer = createTestMessageProducer(queueIn,producerSession);
+        MessageConsumer testMessageConsumer = createTestMessageConsumer(queueOut);
 
-        SimActor simActor = new SimActor(true, queueName1, queueName2, resetval);
-
-        // Test Producer
-        Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
-        testProducerConnection.start();
-        Session testPrducerSession = testProducerConnection.createSession();
-        Destination testProducerDestination = testPrducerSession.createQueue(queueName1);
-        MessageProducer testProducer = testPrducerSession.createProducer(testProducerDestination);
-
-        // Test consumer
-        Connection testConsumerConnection = new ActiveMQConnectionFactory().createConnection();
-        testConsumerConnection.start();
-        Session testConsumerSession = testConsumerConnection.createSession();
-        Destination testConsumerDestination = testConsumerSession.createQueue(queueName2);
-        MessageConsumer testConsumer = testConsumerSession.createConsumer(testConsumerDestination);
-
-
-        testProducer.send(testPrducerSession.createObjectMessage(textMessage));
+        testMessageProducer.send(producerSession.createObjectMessage(textMessage));
 
         Thread simActorThread = new Thread(() -> {
             try {
@@ -86,38 +59,23 @@ public class SimActorTest {
         });
         simActorThread.start();
 
-        Message incomingMessage = testConsumer.receive(1000);
-        var msg = ((ObjectMessage) incomingMessage).getObject();
-        boolean val = (boolean) msg;
-        Assert.assertTrue(val);
+        boolean msg = (Boolean)((ObjectMessage) testMessageConsumer.receive(1000)).getObject();
+        Assert.assertTrue(msg);
 
-        testProducerConnection.close();
+        testMessageProducer.close();
+        testMessageConsumer.close();
+        producerSession.close();
     }
 
     @Test
     public void testCooling() throws JMSException, InterruptedException {
-
         int textMessage = 3;
+        SimActor simActor = new SimActor(true, queueIn, queueOut, resetval);
+        Session producerSession = testProducerSession();
+        MessageProducer testMessageProducer = createTestMessageProducer(queueIn,producerSession);
+        MessageConsumer testMessageConsumer = createTestMessageConsumer(queueOut);
 
-        SimActor simActor = new SimActor(true, queueName1, queueName2, resetval);
-
-        // Test Producer
-        Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
-        testProducerConnection.start();
-        Session testPrducerSession = testProducerConnection.createSession();
-        Destination testProducerDestination = testPrducerSession.createQueue(queueName1);
-        MessageProducer testProducer = testPrducerSession.createProducer(testProducerDestination);
-
-        // Test consumer
-        Connection testConsumerConnection = new ActiveMQConnectionFactory().createConnection();
-        testConsumerConnection.start();
-        Session testConsumerSession = testConsumerConnection.createSession();
-        Destination testConsumerDestination = testConsumerSession.createQueue(queueName2);
-        MessageConsumer testConsumer = testConsumerSession.createConsumer(testConsumerDestination);
-
-
-        testProducer.send(testPrducerSession.createObjectMessage(textMessage));
-
+        testMessageProducer.send(producerSession.createObjectMessage(textMessage));
         Thread simActorThread = new Thread(() -> {
             try {
                 simActor.run();
@@ -127,11 +85,31 @@ public class SimActorTest {
         });
         simActorThread.start();
 
-        Message incomingMessage = testConsumer.receive(1000);
-        var msg = ((ObjectMessage) incomingMessage).getObject();
-        boolean val = (boolean) msg;
-        Assert.assertFalse(val);
+        boolean msg = (Boolean)((ObjectMessage) testMessageConsumer.receive(1000)).getObject();
+        Assert.assertFalse(msg);
 
-        testProducerConnection.close();
+        testMessageProducer.close();
+        testMessageConsumer.close();
+        producerSession.close();
+    }
+
+
+    private Session testProducerSession() throws JMSException {
+        Connection producerConnection = new ActiveMQConnectionFactory().createConnection();
+        producerConnection.start();
+        return producerConnection.createSession();
+    }
+
+    private MessageProducer createTestMessageProducer(String destination, Session producerSession) throws JMSException {
+        Destination producerDestination = producerSession.createQueue(destination);
+        return producerSession.createProducer(producerDestination);
+    }
+
+    private MessageConsumer createTestMessageConsumer(String destination) throws JMSException {
+        Connection consumerConnection = new ActiveMQConnectionFactory().createConnection();
+        consumerConnection.start();
+        Session consumerSession = consumerConnection.createSession();
+        Destination consumerDestination = consumerSession.createQueue(destination);
+        return consumerSession.createConsumer(consumerDestination);
     }
 }

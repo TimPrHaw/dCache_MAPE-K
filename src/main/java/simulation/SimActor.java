@@ -1,7 +1,7 @@
 package simulation;
 
 import JMS.Producer;
-import JMS.SynchConsumer;
+import JMS.Consumer;
 import phases.analyze.Analyze;
 
 import javax.jms.JMSException;
@@ -10,14 +10,14 @@ import java.util.logging.Logger;
 
 public class SimActor{
     private static final Logger log = Logger.getLogger(Analyze.class.getName());
-    private SynchConsumer consumer = null;
+    private Consumer consumer = null;
     private Producer producer = null;
-    private int resetvalue;
+    private final int resetValue;
 
-    public SimActor(boolean queueBool, String inputQueue, String outputQueue, int resetvalue) throws JMSException {
-        this.consumer = new SynchConsumer();
+    public SimActor(boolean queueBool, String inputQueue, String outputQueue, int resetValue) throws JMSException {
+        this.consumer = new Consumer();
         this.producer = new Producer();
-        this.resetvalue = resetvalue;
+        this.resetValue = resetValue;
         consumer.setup(queueBool, inputQueue);
         producer.setup(queueBool, outputQueue);
     }
@@ -39,14 +39,18 @@ public class SimActor{
     }
 
     private void resetTemperature() throws JMSException {
-        producer.sendMessage(resetvalue);
+        log.info(this.getClass().getName()+" is resetting the temperature: " + resetValue);
+        producer.sendMessage(resetValue);
     }
 
     private void setHeating(int value) throws JMSException {
         if (value == 2) {
+            log.info(this.getClass().getName()+ " is now heating...");
             producer.sendMessage(true);
         } else if (value == 3) {
+            log.info(this.getClass().getName()+ " is now cooling...");
             producer.sendMessage(false);
         }
     }
+
 }
