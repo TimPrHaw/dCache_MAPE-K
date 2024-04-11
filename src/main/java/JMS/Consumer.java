@@ -8,8 +8,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 
-public class SynchConsumer {
-    private static final Logger log = Logger.getLogger(SynchConsumer.class.getName());
+public class Consumer {
+    private static final Logger log = Logger.getLogger(Consumer.class.getName());
     private static final int DEFAULT_ACKNOWLEDGE = Session.AUTO_ACKNOWLEDGE;
     private static final boolean DEFAULT_TRANSACTED = false;
     private ConnectionFactory connectionFactory;
@@ -26,15 +26,15 @@ public class SynchConsumer {
     private long timeout = 0;
 
 
-    public SynchConsumer(String brokerURL, String username, String password) throws JMSException {
+    public Consumer(String brokerURL, String username, String password) throws JMSException {
         this.brokerURL = brokerURL;
         this.username = username;
         this.password = password;
     }
-    public SynchConsumer(String brokerURL) throws JMSException {
+    public Consumer(String brokerURL) throws JMSException {
         this.brokerURL = brokerURL;
     }
-    public SynchConsumer() throws JMSException {
+    public Consumer() throws JMSException {
         this(ActiveMQConnection.DEFAULT_BROKER_URL);
     }
 

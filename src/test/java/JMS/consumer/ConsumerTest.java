@@ -1,9 +1,11 @@
 package JMS.consumer;
 
 import JMS.Producer;
-import JMS.SynchConsumer;
+import JMS.Consumer;
 import JMS.testClass.TestObjectClass;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import javax.jms.*;
@@ -11,52 +13,52 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ConsumerTest {
-    String queueName = "test-consumer-queue";
+    private String queueName = "test-consumer-queue";
+    private Consumer consumer;
+    private Producer producer;
+
+    @Before
+    public void setUp() throws Exception {
+        consumer = new Consumer();
+        producer = new Producer();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        consumer.close();
+        producer.close();
+    }
 
     @Test
-    public void setupNoTransactionQueue_ConsumeTextMessage_runGetMessage() throws JMSException {
-
+    public void setupQueue_ConsumeTextMessage_runGetMessage() throws JMSException {
         String testMessage = "Hello World";
-
-        SynchConsumer synchConsumer = new SynchConsumer();
-        synchConsumer.setup(true, queueName);
-
-        Producer producer = new Producer();
+        consumer.setup(true, queueName);
         producer.setup(true, queueName);
-        producer.sendMessage(testMessage);
 
-        Message test = synchConsumer.runGetMessage();
+        producer.sendMessage(testMessage);
+        Message test = consumer.runGetMessage();
         TextMessage textMessage = (TextMessage) test;
 
         Assert.assertNotNull(test);
         Assert.assertEquals(testMessage, textMessage.getText());
-
-        synchConsumer.close();
-        producer.close();
     }
 
     @Test
-    public void setupNoTransactionQueue_ConsumeByteMessage() throws JMSException {
+    public void setupQueue_ConsumeByteMessage() throws JMSException {
         byte[] testInput = {10,20,30,40,50};
 
-        SynchConsumer synchConsumer = new SynchConsumer();
-        synchConsumer.setup(true, queueName);
-
-        Producer producer = new Producer();
+        consumer.setup(true, queueName);
         producer.setup(true, queueName);
-        producer.sendMessage(testInput);
 
-        byte[] test = synchConsumer.run();
+        producer.sendMessage(testInput);
+        byte[] test = consumer.run();
 
         Assert.assertNotNull(test);
         Assert.assertArrayEquals(testInput, test);
-
-        synchConsumer.close();
-        producer.close();
     }
 
     @Test
-    public void setupNoTransactionQueue_ConsumeMapMessage() throws JMSException {
+    public void setupQueue_ConsumeMapMessage() throws JMSException {
         Map<String, Object> testInput = new HashMap<>();
         testInput.put("key_1", (byte) 1);
         testInput.put("key_2", (short) 2);
@@ -68,84 +70,57 @@ public class ConsumerTest {
         testInput.put("key_8", (String) "value008");
         testInput.put("key_10", true);
 
-        SynchConsumer synchConsumer = new SynchConsumer();
-        synchConsumer.setup(true, queueName);
-
-        Producer producer = new Producer();
+        consumer.setup(true, queueName);
         producer.setup(true, queueName);
-        producer.sendMessage(testInput);
 
-        Map<String, Object> test = synchConsumer.run();
+        producer.sendMessage(testInput);
+        Map<String, Object> test = consumer.run();
 
         Assert.assertNotNull(test);
         Assert.assertEquals(testInput, test);
-
-        synchConsumer.close();
-        producer.close();
     }
 
     @Test
-    public void setupNoTransactionQueue_ConsumeTextMessage() throws JMSException {
+    public void setupQueue_ConsumeTextMessage() throws JMSException {
         String testMessage = "Hello World";
 
-        SynchConsumer synchConsumer = new SynchConsumer();
-        synchConsumer.setup(true, queueName);
-
-        Producer producer = new Producer();
+        consumer.setup(true, queueName);
         producer.setup(true, queueName);
-        producer.sendMessage(testMessage);
 
-        String test = synchConsumer.run();
+        producer.sendMessage(testMessage);
+        String test = consumer.run();
 
         Assert.assertNotNull(test);
         Assert.assertEquals(testMessage, test);
-
-        synchConsumer.close();
-        producer.close();
     }
 
     @Test
-    public void setupNoTransactionQueue_ConsumeObjectMessage() throws JMSException {
-        //String queueName = "test-consumer-queue1";
+    public void setupQueue_ConsumeObjectMessage() throws JMSException {
         TestObjectClass testObjectClass = new TestObjectClass(1, "TestName1");
 
-        SynchConsumer synchConsumer = new SynchConsumer();
-        synchConsumer.setup(true, queueName);
-
-        Producer producer = new Producer();
+        consumer.setup(true, queueName);
         producer.setup(true, queueName);
-        producer.sendMessage(testObjectClass);
 
-        ObjectMessage test = synchConsumer.run();
+        producer.sendMessage(testObjectClass);
+        ObjectMessage test = consumer.run();
 
         TestObjectClass testObjectClassConsume = (TestObjectClass) test.getObject();
 
         Assert.assertNotNull(test);
         Assert.assertEquals(testObjectClass.toString(), testObjectClassConsume.toString());
-
-        synchConsumer.close();
-        producer.close();
     }
 
     @Test
-    public void setupNoTransactionQueue_ConsumeStreamMessage() throws JMSException {
-        //String queueName = "test-consumer-queue2";
+    public void setupQueue_ConsumeStreamMessage() throws JMSException {
         Object[] testInput = {12, "StreamTest", '2'};
 
-        SynchConsumer synchConsumer = new SynchConsumer();
-        synchConsumer.setup(true, queueName);
-
-        Producer producer = new Producer();
+        consumer.setup(true, queueName);
         producer.setup(true, queueName);
+
         producer.sendMessage(testInput);
-
-        Object[] test = synchConsumer.run();
-
+        Object[] test = consumer.run();
 
         Assert.assertNotNull(test);
         Assert.assertArrayEquals(testInput, test);
-
-        synchConsumer.close();
-        producer.close();
     }
 }
