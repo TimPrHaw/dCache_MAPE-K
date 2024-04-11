@@ -56,6 +56,7 @@ public class Plan {
     private void checkMessageThenSend(String message){
         if (!message.equals("okay")){
             try {
+                log.info(this.getClass().getName() + " sending message " + message);
                 producer.sendMessage(message);
             } catch (JMSException e) {}
         }

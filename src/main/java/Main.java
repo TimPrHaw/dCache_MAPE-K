@@ -1,15 +1,12 @@
-import kafka.KafkaListener;
-import kafka.KafkaProd;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
+import kafka.KafkaCons;
 import phases.analyze.Analyze;
 import phases.execute.Execute;
+import phases.monitor.Monitor;
 import phases.plan.Plan;
 import simulation.SimActor;
 import simulation.SimSensor;
 
 import javax.jms.JMSException;
-import java.time.Duration;
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
@@ -21,15 +18,19 @@ public class Main {
         int simTicksInMilliSec = 3 * 1000;
         int simStartTemp = 20;
 
-
-
+        // Start Monitor
         new Thread(() -> {
-            KafkaListener consumer = new KafkaListener(topic, bootstrapServer);
-            consumer.run();
+            Monitor monitor;
+            try {
+                monitor = new Monitor("kafka", topic, bootstrapServer);
+                monitor.run();
+            } catch (JMSException e) {
+                throw new RuntimeException(e);
+            }
         }).start();
-
+        // Start Analyze
         new Thread(() -> {
-            Analyze analyze = null;
+            Analyze analyze;
             try {
                 analyze = new Analyze(queueBool, "analyze-queue", "plan-queue");
                 analyze.run();
@@ -37,9 +38,9 @@ public class Main {
                 throw new RuntimeException(e);
             }
         }).start();
-
+        // Start Plan
         new Thread(() -> {
-            Plan plan = null;
+            Plan plan;
             try {
                 plan = new Plan(queueBool, "plan-queue", "execute-queue");
                 plan.run();
@@ -47,7 +48,7 @@ public class Main {
                 throw new RuntimeException(e);
             }
         }).start();
-
+        // Start Execute
         new Thread(() -> {
             Execute execute = null;
             try {
@@ -57,9 +58,9 @@ public class Main {
                 throw new RuntimeException(e);
             }
         }).start();
-
+        // Start actor simulation
         new Thread(() -> {
-            SimActor simActor = null;
+            SimActor simActor;
             try {
                 simActor = new SimActor(queueBool, "actor-queue", "sim-queue", simStartTemp);
                 simActor.run();
@@ -67,9 +68,9 @@ public class Main {
                 throw new RuntimeException(e);
             }
         }).start();
-
+        // Start sensor simulation
         new Thread(() -> {
-            SimSensor simSensor = null;
+            SimSensor simSensor;
             try {
                 simSensor = new SimSensor(simTicksInMilliSec, simStartTemp, topic, bootstrapServer, key, queueBool, "sim-queue");
                 simSensor.run();
