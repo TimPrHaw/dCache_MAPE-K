@@ -1,7 +1,7 @@
 package phases.analyze;
 
 import JMS.Producer;
-import JMS.SynchConsumer;
+import JMS.Consumer;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -12,12 +12,12 @@ import java.util.logging.Logger;
 
 public class Analyze {
     private static final Logger log = Logger.getLogger(Analyze.class.getName());
-    private SynchConsumer consumer = null;
+    private Consumer consumer = null;
     private Producer producer = null;
     private double value;
 
     public Analyze(boolean queueBool, String inputQueue, String outputQueue) throws JMSException {
-        this.consumer = new SynchConsumer();
+        this.consumer = new Consumer();
         this.producer = new Producer();
         consumer.setup(queueBool, inputQueue);
         producer.setup(queueBool, outputQueue);
