@@ -1,54 +1,66 @@
 package phases.monitor;
 
 import JMS.Producer;
-import kafka.KafkaListener;
 
 import javax.jms.JMSException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class Monitor {
+public class Monitor implements Runnable {
     private static final Logger log = Logger.getLogger(Monitor.class.getName());
-    //private final KafkaListener consumer;
+    private final MessageReceiver messageReceiver;
     private final List<Double> list;
     private final int LISTSIZE = 4;
+    //private KafkaCons kafkaCons;
     private Producer producer;
 
-    public Monitor(){
+    public Monitor(String messageReceiver, String topic, String bootstrapServers) throws JMSException {
         list = new LinkedList<>();
-        try {
-            setProducer();
-        }
-        catch (JMSException ex) {}
-    }
-
-    public void setProducer() throws JMSException {
         producer = new Producer();
-        producer.setup(true, "analyze-queue");
+        producer.setup("analyze-queue");
+        this.messageReceiver = MessageReceiverFactory.createMessageReceiver(messageReceiver, topic, bootstrapServers);
+        log.info(this.getClass().getName() + " built messageReceiver: " + this.messageReceiver.toString());
     }
 
-    public void addList(String element){
-        if(list.size() == LISTSIZE){
-            list.remove(0);
+    public Monitor(String messageReceiver) throws JMSException {
+        this(messageReceiver, null, null);
+    }
+
+    @Override
+    public void run(){
+        while(true){
+            List<String> valueList = messageReceiver.messageReceive();
+            addList(valueList);
+            pushToJMS();
         }
+    }
+
+    public void addList(List<String> elementList){
         try {
-            list.add(Double.parseDouble(element));
-            log.info("List update: " + list);
+            for (String element : elementList) {
+                if(list.size() == LISTSIZE){
+                    list.remove(0);
+                }
+                list.add(Double.parseDouble(element));
+                log.info("List update: " + list);
+            }
         } catch (NumberFormatException e){
-            log.info("Ungültiges Format für die Umwandlung in einen double-Wert: " + element);
+            log.info("Ungültiges Format für die Umwandlung in einen double-Wert: " + elementList);
             e.printStackTrace();
         }
-        pushToJMS();
+
     }
 
     private void pushToJMS(){
         try {
             producer.sendMessage(getList());
-        } catch (JMSException ex) {}
+        } catch (JMSException ex) {
+            ex.printStackTrace();
+        }
     }
 
-    public String getList() {
+    private String getList() {
         String t = list.toString();
         return t;
     }
