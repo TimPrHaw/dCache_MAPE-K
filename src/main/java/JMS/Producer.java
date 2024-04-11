@@ -57,6 +57,10 @@ public class Producer {
         setup(DEFAULT_TRANSACTED, queueBool, destinationName);
     }
 
+    public void setup(String destinationName) throws JMSException {
+        setup(DEFAULT_TRANSACTED, true, destinationName);
+    }
+
     public void sendMessage(Object payload) throws JMSException {
         Message message;
         if (payload instanceof byte[]) {

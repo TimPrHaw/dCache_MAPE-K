@@ -3,211 +3,231 @@ package JMS.producer;
 import javax.jms.JMSException;
 
 import JMS.Producer;
+import JMS.testClass.TestObjectClass;
 import org.apache.activemq.*;
 
 import javax.jms.*;
 import javax.jms.Message;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class ProducerTest {
 
     private String queueName = "test-queue";
+    private String topicName = "test/topic";
+    private Producer testProducer;
+    private MessageConsumer testMessageConsumerQueue;
+
+    @Before
+    public void setUp() throws Exception {
+        testProducer = new Producer();
+        testMessageConsumerQueue = createTestConsumer(queueName);
+         }
+
+    @After
+    public void tearDown() throws Exception {
+        testProducer.close();
+        testMessageConsumerQueue.close();
+    }
+
+    @Test
+    public void setupNoTransactionQueue_SendShort_thenConsumeMessage() throws JMSException{
+        short testInput = Short.MIN_VALUE;
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
+
+        Assert.assertEquals(((ObjectMessage) consumedMessage).getObject(), testInput);
+    }
+
+    @Test
+    public void setupNoTransactionQueue_SendLong_thenConsumeMessage() throws JMSException{
+        long testInput = Long.MAX_VALUE;
+
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
+
+        Assert.assertEquals(((ObjectMessage) consumedMessage).getObject(),testInput);
+    }
+
+    @Test
+    public void setupNoTransactionQueue_SendChar_thenConsumeMessage() throws JMSException{
+        char testInput = 'c';
+
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
+
+        Assert.assertEquals(((ObjectMessage) consumedMessage).getObject(),testInput);
+    }
+
+    @Test
+    public void setupNoTransactionQueue_SendInt_thenConsumeMessage() throws JMSException{
+        int testInput = 22;
+
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
+
+        Assert.assertEquals(((ObjectMessage) consumedMessage).getObject(),testInput);
+    }
 
     @Test
     public void setupNoTransactionQueue_SendDouble_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(false, true, queueName);
-        Double testInput = 22.2;
-        testedProducer.sendMessage(testInput);
+        double testInput = 22.2;
 
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
 
-        Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
+        var incMsg = ((ObjectMessage) consumedMessage).getObject();
 
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
+        Assert.assertEquals(incMsg,testInput);
     }
-
 
     @Test
     public void setupNoTransactionQueue_SendText_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(false, true, queueName);
         String testInput = "Test Text";
-        testedProducer.sendMessage(testInput);
 
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
         Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
-
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
     }
-
 
     @Test
     public void setupWithTransactionQueue_SendTextAndCommit_thenConsumeMessage() throws JMSException{
+        String testInput = "Test Text";
+
+        testProducer.setup(true, true, queueName);
+        testProducer.sendMessage(testInput);
+        testProducer.commitSession(true);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
+
+        Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
+    }
+
+    @Test
+    public void setupNoTransactionTopic_subscribeOnTopic_thenSendText() throws JMSException, InterruptedException {
+        Connection testConnection1 = new ActiveMQConnectionFactory().createConnection();
+        Connection testConnection2 = new ActiveMQConnectionFactory().createConnection();
+        testConnection1.start();
+        testConnection2.start();
+        Session testSession1 = testConnection1.createSession();
+        Session testSession2 = testConnection2.createSession();
+        Destination testDestination1 = testSession1.createTopic(topicName);
+        Destination testDestination2 = testSession2.createTopic(topicName);
+        MessageConsumer testConsumer1 = testSession1.createConsumer(testDestination1);
+        MessageConsumer testConsumer2 = testSession2.createConsumer(testDestination2);
+        ConsumerMessageListener consumer1 = new ConsumerMessageListener("TestConsumer1");
+        ConsumerMessageListener consumer2 = new ConsumerMessageListener("TestConsumer2");
+        testConsumer1.setMessageListener(consumer1);
+        testConsumer2.setMessageListener(consumer2);
+
         Producer testedProducer = new Producer();
-        testedProducer.setup(true, true, queueName);
+        testedProducer.setup(false, false, topicName);
+        String testInput = "Test Text";
+        testedProducer.sendMessage(testInput);
+
+        // kurzer sleep damit die Nachricht auch ankommt
+        Thread.sleep(100);
+        testedProducer.close();
+
+        Message consumedMessage1 = consumer1.getLastMessage();
+        Message consumedMessage2 = consumer2.getLastMessage();
+
+        Assert.assertEquals(((TextMessage)consumedMessage1).getText(),testInput);
+        Assert.assertEquals(((TextMessage)consumedMessage2).getText(),testInput);
+
+        close(testConsumer1, testSession1, testConnection1);
+        close(testConsumer2, testSession2, testConnection2);
+    }
+
+    @Test
+    public void setupWithTransactionTopic_subscribeOnTopic_thenSendText() throws JMSException, InterruptedException {
+        Connection testConnection1 = new ActiveMQConnectionFactory().createConnection();
+        Connection testConnection2 = new ActiveMQConnectionFactory().createConnection();
+        testConnection1.start();
+        testConnection2.start();
+        Session testSession1 = testConnection1.createSession();
+        Session testSession2 = testConnection2.createSession();
+        Destination testDestination1 = testSession1.createTopic(topicName);
+        Destination testDestination2 = testSession2.createTopic(topicName);
+        MessageConsumer testConsumer1 = testSession1.createConsumer(testDestination1);
+        MessageConsumer testConsumer2 = testSession2.createConsumer(testDestination2);
+        ConsumerMessageListener consumer1 = new ConsumerMessageListener("TestConsumer1");
+        ConsumerMessageListener consumer2 = new ConsumerMessageListener("TestConsumer2");
+        testConsumer1.setMessageListener(consumer1);
+        testConsumer2.setMessageListener(consumer2);
+
+        Producer testedProducer = new Producer();
+        testedProducer.setup(true, false, topicName);
         String testInput = "Test Text";
         testedProducer.sendMessage(testInput);
         testedProducer.commitSession(true);
 
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
-
-        Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
-
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
-
-        // Close producer and consumer
+        // kurzer sleep damit die Nachricht auch ankommt
+        Thread.sleep(100);
         testedProducer.close();
-        close(testConsumer, testSession, testConnection);
-    }
 
-    // TODO: TOPIC TEST FEHLERHAFT
-    @Test
-    public void setupNoTransactionTopic_SendText_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(false, false, queueName);
-        String testInput = "Test Text";
-        testedProducer.sendMessage(testInput);
+        Message consumedMessage1 = consumer1.getLastMessage();
+        Message consumedMessage2 = consumer2.getLastMessage();
 
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createTopic(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        Assert.assertEquals(((TextMessage)consumedMessage1).getText(),testInput);
+        Assert.assertEquals(((TextMessage)consumedMessage2).getText(),testInput);
 
-        Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
-
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
-    }
-
-
-    @Test
-    public void setupWithTransactionTopic_SendTextAndCommit_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(true, false, queueName);
-        String testInput = "Test Text";
-        testedProducer.sendMessage(testInput);
-        testedProducer.commitSession(true);
-
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createTopic(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
-
-        Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
-
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
+        close(testConsumer1, testSession1, testConnection1);
+        close(testConsumer2, testSession2, testConnection2);
     }
 
     @Test
     public void setupNoTransactionQueue_SendByte_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(false, true, queueName);
         byte[] testInput = {10,20,30,40,50};
-        testedProducer.sendMessage(testInput);
 
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
         byte[] data = new byte[(int)((BytesMessage) consumedMessage).getBodyLength()];
         ((BytesMessage) consumedMessage).readBytes(data);
 
         Assert.assertArrayEquals(testInput, data);
-
-        Assert.assertFalse(consumedMessage instanceof TextMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
     }
 
     @Test
     public void setupWithTransactionQueue_SendByteCommit_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(true, true, queueName);
         byte[] testInput = {10,20,30,40,50};
-        testedProducer.sendMessage(testInput);
-        testedProducer.commitSession(true);
 
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        testProducer.setup(true, true, queueName);
+        testProducer.sendMessage(testInput);
+        testProducer.commitSession(true);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
         byte[] data = new byte[(int)((BytesMessage) consumedMessage).getBodyLength()];
         ((BytesMessage) consumedMessage).readBytes(data);
 
         Assert.assertArrayEquals(testInput, data);
-
-        Assert.assertFalse(consumedMessage instanceof TextMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
     }
 
     @Test
     public void setupNoTransactionQueue_SendMap_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(false, true, queueName);
-
         Map<String, Object> testInput = new HashMap<>();
         testInput.put("key_1", (byte) 1);
         testInput.put("key_2", (short) 2);
@@ -218,15 +238,11 @@ public class ProducerTest {
         testInput.put("key_7", (Double) 7.7);
         testInput.put("key_8", (String) "value008");
         testInput.put("key_10", true);
-        testedProducer.sendMessage(testInput);
 
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
         Map<String, Object> map = new HashMap<>();
         Enumeration<String> keys = ((MapMessage) consumedMessage).getMapNames();
@@ -237,52 +253,10 @@ public class ProducerTest {
         }
 
         Assert.assertEquals(testInput, map);
-
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof TextMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
-    }
-
-    @Test
-    public void setupNoTransactionQueue_SendByteArrayAsMap_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(false, true, queueName);
-
-        Map<String, Object> testInput = new HashMap<>();
-        byte[] producedByte = (byte[]) "value009".getBytes();
-        testInput.put("key_9", producedByte);
-
-        testedProducer.sendMessage(testInput);
-
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
-
-        byte[] consumedByte = (byte[]) ((MapMessage) consumedMessage)
-                .getObject((String) ((MapMessage) consumedMessage).getMapNames().nextElement());
-
-        Assert.assertArrayEquals(producedByte, consumedByte);
-
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof TextMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
     }
 
     @Test
     public void setupWithTransactionQueue_SendMapCommit_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(true, true, queueName);
-
         Map<String, Object> testInput = new HashMap<>();
         testInput.put("key_1", (byte) 1);
         testInput.put("key_2", (short) 2);
@@ -294,16 +268,12 @@ public class ProducerTest {
         testInput.put("key_8", (String) "value008");
         testInput.put("key_10", true);
 
-        testedProducer.sendMessage(testInput);
-        testedProducer.commitSession(true);
 
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        testProducer.setup(true, true, queueName);
+        testProducer.sendMessage(testInput);
+        testProducer.commitSession(true);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
         Map<String, Object> map = new HashMap<>();
         Enumeration<String> keys = ((MapMessage) consumedMessage).getMapNames();
@@ -314,137 +284,124 @@ public class ProducerTest {
         }
 
         Assert.assertEquals(testInput, map);
-        Assert.assertTrue(consumedMessage instanceof MapMessage);
-
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof TextMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
     }
 
     @Test
-    public void setupWithTransactionQueue_SendByteArrayAsMapAndCommit_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(true, true, queueName);
-        Map<String, Object> testInput = new HashMap<>();
+    public void setupNoTransactionQueue_SendByteArrayAsMap_thenConsumeMessage() throws JMSException{
+         Map<String, Object> testInput = new HashMap<>();
         byte[] producedByte = (byte[]) "value009".getBytes();
         testInput.put("key_9", producedByte);
 
-        testedProducer.sendMessage(testInput);
-        testedProducer.commitSession(true);
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(testInput);
 
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
         byte[] consumedByte = (byte[]) ((MapMessage) consumedMessage)
                 .getObject((String) ((MapMessage) consumedMessage).getMapNames().nextElement());
 
         Assert.assertArrayEquals(producedByte, consumedByte);
-        Assert.assertTrue(consumedMessage instanceof MapMessage);
-
-        Assert.assertFalse(consumedMessage instanceof BytesMessage);
-        Assert.assertFalse(consumedMessage instanceof TextMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
     }
 
-    /**
-     * TODO: Streams und Object testen
     @Test
-    public void setupNoTransactionQueue_SendSteam_thenConsumeMessage() throws JMSException{
-        Producer testedProducer = new Producer();
-        testedProducer.setup(false, true, queueName);
+    public void setupWithTransactionQueue_SendByteArrayAsMapAndCommit_thenConsumeMessage() throws JMSException{
+        Map<String, Object> testInput = new HashMap<>();
+        byte[] producedByte = (byte[]) "value009".getBytes();
+        testInput.put("key_9", producedByte);
 
+        testProducer.setup(true, true, queueName);
+        testProducer.sendMessage(testInput);
+        testProducer.commitSession(true);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
+
+        byte[] consumedByte = (byte[]) ((MapMessage) consumedMessage)
+                .getObject((String) ((MapMessage) consumedMessage).getMapNames().nextElement());
+
+        Assert.assertArrayEquals(producedByte, consumedByte);
+    }
+
+    @Test
+    public void setupNoTransactionQueue_SendStream_thenConsumeMessage() throws JMSException{
         Object[] testInput = {12, "StreamTest", '2'};
 
-        testedProducer.sendMessage(testInput);
+        testProducer.setup(true, queueName);
+        testProducer.sendMessage(testInput);
 
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
-        //((StreamMessage) consumedMessage).
-
-        //Assert.assertArrayEquals(testInput, data);
-
-        Assert.assertFalse(consumedMessage instanceof TextMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
+        StreamMessage streamMessage = (StreamMessage) consumedMessage;
+        ArrayList<Object> payload = new ArrayList<>();
+        while (true){
+            try {
+                payload.add(streamMessage.readObject());
+            } catch (Exception e) {
+                break;
+            }
+        }
+        Assert.assertArrayEquals(testInput, payload.toArray());
     }
 
+    @Test
+    public void setupWithTransactionQueue_SendStream_thenConsumeMessage() throws JMSException{
+        Object[] testInput = {12, "StreamTest", '2'};
 
+        testProducer.setup(true, true, queueName);
+        testProducer.sendMessage(testInput);
+        testProducer.commitSession(true);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
+
+        StreamMessage streamMessage = (StreamMessage) consumedMessage;
+        ArrayList<Object> payload = new ArrayList<>();
+        while (true){
+            try {
+                payload.add(streamMessage.readObject());
+            } catch (Exception e) {
+                break;
+            }
+        }
+        Assert.assertArrayEquals(testInput, payload.toArray());
+    }
 
     @Test
     public void setupNoTransactionQueue_SendObject_thenConsumeMessage() throws JMSException{
-
-        System.setProperty("org.apache.activemq.SERIALIZABLE_PACKAGES", "package JMS.producer");
-
-        Producer testedProducer = new Producer();
-        testedProducer.setup(false, true, queueName);
         int inputNumber = 1337;
         String inputName = "John Doe";
         TestObjectClass testObjectClass = new TestObjectClass(inputNumber, inputName);
 
-        testedProducer.sendMessage(testObjectClass);
+        Producer producer = new Producer();
+        producer.setup(false, true, queueName);
+        producer.sendMessage(testObjectClass);
 
-        // Minimal Test Consumer
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination = testSession.createQueue(queueName);
-        MessageConsumer testConsumer = testSession.createConsumer(testDestination);
-        Message consumedMessage = testConsumer.receive();
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
 
-        ObjectMessage objectMessage = (ObjectMessage) consumedMessage;
-        TestObjectClass receivedObject = (TestObjectClass) objectMessage.getObject();
+        ObjectMessage aaa = ((ObjectMessage) consumedMessage);
+        TestObjectClass testObjectClass1 = (TestObjectClass) aaa.getObject();
 
-        //Assert.assertArrayEquals(testInput, data);
-
-        Assert.assertFalse(consumedMessage instanceof TextMessage);
-        Assert.assertFalse(consumedMessage instanceof MapMessage);
-
-        // Close producer and consumer
-        testedProducer.close();
-        close(testConsumer, testSession, testConnection);
-    }
-    */
-
-    /**
-    private Message consume(boolean isQueue, String destination) throws JMSException {
-    MessageConsumer consumer = testConsumer(isQueue, destination);
-    return consumer.receive();
+        Assert.assertEquals(inputName, testObjectClass1.getName());
+        Assert.assertEquals(inputNumber, testObjectClass1.getNumber());
     }
 
+    @Test
+    public void setupWithTransactionQueue_SendObject_thenConsumeMessage() throws JMSException{
+        int inputNumber = 1337;
+        String inputName = "John Doe";
+        TestObjectClass testObjectClass = new TestObjectClass(inputNumber, inputName);
 
-    private MessageConsumer testConsumer(boolean isQueue, String destination) throws JMSException {
-        Connection testConnection = new ActiveMQConnectionFactory().createConnection();
-        testConnection.start();
-        Session testSession = testConnection.createSession();
-        Destination testDestination;
-        if (isQueue) {
-            testDestination = testSession.createQueue(destination);
-        } else {
-            testDestination = testSession.createTopic(destination);
-        }
-        return testSession.createConsumer(testDestination);
+        Producer producer = new Producer();
+        producer.setup(true, true, queueName);
+        producer.sendMessage(testObjectClass);
+        producer.commitSession(true);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(5000);
+
+        ObjectMessage aaa = ((ObjectMessage) consumedMessage);
+        TestObjectClass testObjectClass1 = (TestObjectClass) aaa.getObject();
+
+        Assert.assertEquals(inputName, testObjectClass1.getName());
+        Assert.assertEquals(inputNumber, testObjectClass1.getNumber());
     }
-     */
 
     private void close(MessageConsumer consumer, Session session, Connection connection) throws JMSException {
         if (consumer != null){
@@ -459,6 +416,16 @@ public class ProducerTest {
             connection.close();
             connection = null;
         }
+    }
+
+    private MessageConsumer createTestConsumer(String destination) throws JMSException {
+        ConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
+        ((ActiveMQConnectionFactory)connectionFactory).setTrustAllPackages(true);
+        Connection testConnection = connectionFactory.createConnection();
+        testConnection.start();
+        Session testSession = testConnection.createSession();
+        Destination testDestination = testSession.createQueue(destination);
+        return testSession.createConsumer(testDestination);
     }
 }
 
