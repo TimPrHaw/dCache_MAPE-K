@@ -1,23 +1,22 @@
 package phases.plan;
 
 import JMS.Producer;
-import JMS.SynchConsumer;
+import JMS.Consumer;
 import phases.analyze.Analyze;
 
 import javax.jms.JMSException;
 import javax.jms.*;
-import javax.jms.TextMessage;
 import java.util.logging.Logger;
 
 public class Plan {
     private static final Logger log = Logger.getLogger(Analyze.class.getName());
-    private SynchConsumer consumer = null;
+    private Consumer consumer = null;
     private Producer producer = null;
     private int upperThreshold = 25;
     private int lowerThreshold = 18;
 
     public Plan(boolean queueBool, String inputQueue, String outputQueue) throws JMSException {
-        this.consumer = new SynchConsumer();
+        this.consumer = new Consumer();
         this.producer = new Producer();
         consumer.setup(queueBool, inputQueue);
         producer.setup(queueBool, outputQueue);
@@ -28,7 +27,7 @@ public class Plan {
         while (true) {
             var message = consumer.run();
             double tmp = (double)((ObjectMessage)message).getObject();
-            producer.sendMessage(planing(((tmp))));
+            checkMessageThenSend(planing(tmp));
         }
     }
 
@@ -52,5 +51,13 @@ public class Plan {
             res = "toLow";
         }
         return res;
+    }
+
+    private void checkMessageThenSend(String message){
+        if (!message.equals("okay")){
+            try {
+                producer.sendMessage(message);
+            } catch (JMSException e) {}
+        }
     }
 }

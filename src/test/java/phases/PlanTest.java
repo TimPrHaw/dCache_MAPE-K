@@ -8,31 +8,21 @@ import phases.plan.Plan;
 import javax.jms.*;
 
 public class PlanTest {
+    private String queueIn = "plan-test-queue-in";
+    private String queueOut = "plan-test-queue-out";
 
-    private String queueName1 = "plan-test-queue-in";
-    private String queueName2 = "plan-test-queue-out";
 
+/**
     @Test
     public void testOkay() throws JMSException {
-        String textMessage = "20.2";
+        double textMessage = 20.2;
 
-        Plan plan = new Plan(true, queueName1, queueName2);
+        Plan plan = new Plan(true, queueIn, queueOut);
+        Session producerSession = testProducerSession();
+        MessageProducer testMessageProducer = createTestMessageProducer(queueIn,producerSession);
+        MessageConsumer testMessageConsumer = createTestMessageConsumer(queueOut);
 
-        // Test Producer
-        Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
-        testProducerConnection.start();
-        Session testPrducerSession = testProducerConnection.createSession();
-        Destination testProducerDestination = testPrducerSession.createQueue(queueName1);
-        MessageProducer testProducer = testPrducerSession.createProducer(testProducerDestination);
-
-        // Test consumer
-        Connection testConsumerConnection = new ActiveMQConnectionFactory().createConnection();
-        testConsumerConnection.start();
-        Session testConsumerSession = testConsumerConnection.createSession();
-        Destination testConsumerDestination = testConsumerSession.createQueue(queueName2);
-        MessageConsumer testConsumer = testConsumerSession.createConsumer(testConsumerDestination);
-
-        testProducer.send(testPrducerSession.createTextMessage(textMessage));
+        testMessageProducer.send(producerSession.createObjectMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
             try {
@@ -43,36 +33,26 @@ public class PlanTest {
         });
         analyzeThread.start();
 
-        Message incomingMessage = testConsumer.receive(1000);
+        Message incomingMessage = testMessageConsumer.receive(10000);
         String msg = ((TextMessage) incomingMessage).getText();
         Assert.assertEquals(msg, "okay");
 
-        testProducerConnection.close();
-        testConsumerConnection.close();
+        testMessageProducer.close();
+        testMessageConsumer.close();
+        producerSession.close();
     }
+ */
 
     @Test
     public void testReset() throws JMSException {
-        String textMessage = "100.12";
+        double textMessage = 100.12;
 
-        Plan plan = new Plan(true, queueName1, queueName2);
+        Plan plan = new Plan(true, queueIn, queueOut);
+        Session producerSession = testProducerSession();
+        MessageProducer testMessageProducer = createTestMessageProducer(queueIn,producerSession);
+        MessageConsumer testMessageConsumer = createTestMessageConsumer(queueOut);
 
-        // Test Producer
-        Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
-        testProducerConnection.start();
-        Session testPrducerSession = testProducerConnection.createSession();
-        Destination testProducerDestination = testPrducerSession.createQueue(queueName1);
-        MessageProducer testProducer = testPrducerSession.createProducer(testProducerDestination);
-
-        // Test consumer
-        Connection testConsumerConnection = new ActiveMQConnectionFactory().createConnection();
-        testConsumerConnection.start();
-        Session testConsumerSession = testConsumerConnection.createSession();
-        Destination testConsumerDestination = testConsumerSession.createQueue(queueName2);
-        MessageConsumer testConsumer = testConsumerSession.createConsumer(testConsumerDestination);
-
-        testProducer.send(testPrducerSession.createTextMessage(textMessage));
-
+        testMessageProducer.send(producerSession.createObjectMessage(textMessage));
         Thread analyzeThread = new Thread(() -> {
             try {
                 plan.run();
@@ -81,36 +61,23 @@ public class PlanTest {
             }
         });
         analyzeThread.start();
+        Message incomingMessage = testMessageConsumer.receive(1000);
+        Assert.assertEquals("reset", ((TextMessage) incomingMessage).getText());
 
-        Message incomingMessage = testConsumer.receive(1000);
-        String msg = ((TextMessage) incomingMessage).getText();
-        Assert.assertEquals("reset", msg);
-
-        testProducerConnection.close();
-        testConsumerConnection.close();
+        testMessageProducer.close();
+        testMessageConsumer.close();
+        producerSession.close();
     }
 
     @Test
     public void testToHigh() throws JMSException {
-        String textMessage = "25.2";
+        double textMessage = 25.2;
+        Plan plan = new Plan(true, queueIn, queueOut);
+        Session producerSession = testProducerSession();
+        MessageProducer testMessageProducer = createTestMessageProducer(queueIn,producerSession);
+        MessageConsumer testMessageConsumer = createTestMessageConsumer(queueOut);
 
-        Plan plan = new Plan(true, queueName1, queueName2);
-
-        // Test Producer
-        Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
-        testProducerConnection.start();
-        Session testPrducerSession = testProducerConnection.createSession();
-        Destination testProducerDestination = testPrducerSession.createQueue(queueName1);
-        MessageProducer testProducer = testPrducerSession.createProducer(testProducerDestination);
-
-        // Test consumer
-        Connection testConsumerConnection = new ActiveMQConnectionFactory().createConnection();
-        testConsumerConnection.start();
-        Session testConsumerSession = testConsumerConnection.createSession();
-        Destination testConsumerDestination = testConsumerSession.createQueue(queueName2);
-        MessageConsumer testConsumer = testConsumerSession.createConsumer(testConsumerDestination);
-
-        testProducer.send(testPrducerSession.createTextMessage(textMessage));
+        testMessageProducer.send(producerSession.createObjectMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
             try {
@@ -121,35 +88,23 @@ public class PlanTest {
         });
         analyzeThread.start();
 
-        Message incomingMessage = testConsumer.receive(1000);
-        String msg = ((TextMessage) incomingMessage).getText();
-        Assert.assertEquals("toHigh", msg);
+        Message incomingMessage = testMessageConsumer.receive(1000);
+        Assert.assertEquals("toHigh", ((TextMessage) incomingMessage).getText());
 
-        testProducerConnection.close();
-        testConsumerConnection.close();
+        testMessageProducer.close();
+        testMessageConsumer.close();
+        producerSession.close();
     }
 
     @Test
     public void testToLow() throws JMSException {
-        String textMessage = "17.8";
+        double textMessage = 17.8;
+        Plan plan = new Plan(true, queueIn, queueOut);
+        Session producerSession = testProducerSession();
+        MessageProducer testMessageProducer = createTestMessageProducer(queueIn,producerSession);
+        MessageConsumer testMessageConsumer = createTestMessageConsumer(queueOut);
 
-        Plan plan = new Plan(true, queueName1, queueName2);
-
-        // Test Producer
-        Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
-        testProducerConnection.start();
-        Session testPrducerSession = testProducerConnection.createSession();
-        Destination testProducerDestination = testPrducerSession.createQueue(queueName1);
-        MessageProducer testProducer = testPrducerSession.createProducer(testProducerDestination);
-
-        // Test consumer
-        Connection testConsumerConnection = new ActiveMQConnectionFactory().createConnection();
-        testConsumerConnection.start();
-        Session testConsumerSession = testConsumerConnection.createSession();
-        Destination testConsumerDestination = testConsumerSession.createQueue(queueName2);
-        MessageConsumer testConsumer = testConsumerSession.createConsumer(testConsumerDestination);
-
-        testProducer.send(testPrducerSession.createTextMessage(textMessage));
+        testMessageProducer.send(producerSession.createObjectMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
             try {
@@ -160,11 +115,30 @@ public class PlanTest {
         });
         analyzeThread.start();
 
-        Message incomingMessage = testConsumer.receive(1000);
-        String msg = ((TextMessage) incomingMessage).getText();
-        Assert.assertEquals("toLow", msg);
+        Message incomingMessage = testMessageConsumer.receive(1000);
+        Assert.assertEquals("toLow", ((TextMessage) incomingMessage).getText());
 
-        testProducerConnection.close();
-        testConsumerConnection.close();
+        testMessageProducer.close();
+        testMessageConsumer.close();
+        producerSession.close();
+    }
+
+    private Session testProducerSession() throws JMSException {
+        Connection producerConnection = new ActiveMQConnectionFactory().createConnection();
+        producerConnection.start();
+        return producerConnection.createSession();
+    }
+
+    private MessageProducer createTestMessageProducer(String destination, Session producerSession) throws JMSException {
+        Destination producerDestination = producerSession.createQueue(destination);
+        return producerSession.createProducer(producerDestination);
+    }
+
+    private MessageConsumer createTestMessageConsumer(String destination) throws JMSException {
+        Connection consumerConnection = new ActiveMQConnectionFactory().createConnection();
+        consumerConnection.start();
+        Session consumerSession = consumerConnection.createSession();
+        Destination consumerDestination = consumerSession.createQueue(destination);
+        return consumerSession.createConsumer(consumerDestination);
     }
 }
