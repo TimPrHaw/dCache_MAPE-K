@@ -83,7 +83,7 @@ public class Consumer {
     }
 
     /**
-     * Runs the consumer and processes the received message.
+     * Retrieves a message from the consumer.
      * @param <T> The type of the message payload.
      * @return The processed message payload.
      * @throws JMSException If an error occurs during JMS operations.
