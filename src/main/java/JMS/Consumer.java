@@ -7,7 +7,9 @@ import javax.jms.*;
 import java.util.*;
 import java.util.logging.Logger;
 
-
+/**
+ * This class represents a JMS Consumer.
+ */
 public class Consumer {
     private static final Logger log = Logger.getLogger(Consumer.class.getName());
     private static final int DEFAULT_ACKNOWLEDGE = Session.AUTO_ACKNOWLEDGE;
@@ -25,19 +27,42 @@ public class Consumer {
     private String selector;
     private long timeout = 0;
 
-
+    /**
+     * Constructor with broker URL, username, and password.
+     * @param brokerURL The URL of the message broker.
+     * @param username The username for authentication.
+     * @param password The password for authentication.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public Consumer(String brokerURL, String username, String password) throws JMSException {
         this.brokerURL = brokerURL;
         this.username = username;
         this.password = password;
     }
+
+    /**
+     * Constructor with only broker URL.
+     * @param brokerURL The URL of the message broker.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public Consumer(String brokerURL) throws JMSException {
         this.brokerURL = brokerURL;
     }
+
+    /**
+     * Default constructor using ActiveMQ default broker URL.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public Consumer() throws JMSException {
         this(ActiveMQConnection.DEFAULT_BROKER_URL);
     }
 
+    /**
+     * Sets up the consumer with the provided parameters.
+     * @param queueBool True if it's a queue, false if it's a topic.
+     * @param queueName The name of the queue or topic.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public void setup(Boolean queueBool, String queueName) throws JMSException {
         setConnectionFactory(brokerURL, username, password);
         setConnection();
@@ -46,12 +71,23 @@ public class Consumer {
         setMessageConsumer();
     }
 
+    /**
+     * Retrieves a message from the consumer.
+     * @return The received message.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public Message runGetMessage() throws JMSException {
         Message t = consumer.receive(timeout);
         //log.info(this.getClass().getName() + " received " + t.getClass().getSimpleName() + " payload: " + ((TextMessage)t).getText());
         return t;
     }
 
+    /**
+     * Runs the consumer and processes the received message.
+     * @param <T> The type of the message payload.
+     * @return The processed message payload.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public <T> T run() throws JMSException {
         Message message = consumer.receive(timeout);
         if (message instanceof TextMessage) {
@@ -79,6 +115,10 @@ public class Consumer {
         return (T) message;
     }
 
+    /**
+     * Closes the JMS resources.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public void close() throws JMSException {
         if (consumer != null) {
             consumer.close();
@@ -94,16 +134,36 @@ public class Consumer {
         }
     }
 
+    /**
+     * Sets the acknowledgement mode for the session.
+     * @param acknowledged The acknowledgement mode to be set.
+     */
     public void setAcknowledged(int acknowledged) {
         this.acknowledged = acknowledged;
     }
 
+    /**
+     * Sets whether the session is transacted or not.
+     * @param transacted True if the session is transacted, false otherwise.
+     */
     public void setTransacted(boolean transacted) {
         this.transacted = transacted;
     }
 
+    /**
+     * Sets the message selector for the consumer.
+     * @param selector The message selector to be set.
+     */
     public void setSelector(String selector) {
         this.selector = selector;
+    }
+
+    /**
+     * Sets the timeout for receiving messages.
+     * @param timeout The timeout value in milliseconds.
+     */
+    public void setTimeout(long timeout) {
+        this.timeout = timeout;
     }
 
     private String processTextMessage(Message message) throws JMSException {
@@ -176,9 +236,5 @@ public class Consumer {
         } else {
             consumer = session.createConsumer(destination, selector);
         }
-    }
-
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
     }
 }

@@ -17,18 +17,30 @@ public class ConsumerTest {
     private Consumer consumer;
     private Producer producer;
 
+    /**
+     * Sets up the necessary resources for testing.
+     * @throws Exception If an error occurs during setup.
+     */
     @Before
     public void setUp() throws Exception {
         consumer = new Consumer();
         producer = new Producer();
     }
 
+    /**
+     * Cleans up the resources after testing.
+     * @throws Exception If an error occurs during teardown.
+     */
     @After
     public void tearDown() throws Exception {
         consumer.close();
         producer.close();
     }
 
+    /**
+     * Test consuming a text message.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     @Test
     public void setupQueue_ConsumeTextMessage_runGetMessage() throws JMSException {
         String testMessage = "Hello World";
@@ -43,6 +55,10 @@ public class ConsumerTest {
         Assert.assertEquals(testMessage, textMessage.getText());
     }
 
+    /**
+     * Test consuming a byte message.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     @Test
     public void setupQueue_ConsumeByteMessage() throws JMSException {
         byte[] testInput = {10,20,30,40,50};
@@ -57,6 +73,10 @@ public class ConsumerTest {
         Assert.assertArrayEquals(testInput, test);
     }
 
+    /**
+     * Test consuming a map message.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     @Test
     public void setupQueue_ConsumeMapMessage() throws JMSException {
         Map<String, Object> testInput = new HashMap<>();
@@ -80,6 +100,10 @@ public class ConsumerTest {
         Assert.assertEquals(testInput, test);
     }
 
+    /**
+     * Test consuming a text message.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     @Test
     public void setupQueue_ConsumeTextMessage() throws JMSException {
         String testMessage = "Hello World";
@@ -94,6 +118,10 @@ public class ConsumerTest {
         Assert.assertEquals(testMessage, test);
     }
 
+    /**
+     * Test consuming an object message.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     @Test
     public void setupQueue_ConsumeObjectMessage() throws JMSException {
         TestObjectClass testObjectClass = new TestObjectClass(1, "TestName1");
@@ -110,6 +138,10 @@ public class ConsumerTest {
         Assert.assertEquals(testObjectClass.toString(), testObjectClassConsume.toString());
     }
 
+    /**
+     * Test consuming a stream message.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     @Test
     public void setupQueue_ConsumeStreamMessage() throws JMSException {
         Object[] testInput = {12, "StreamTest", '2'};

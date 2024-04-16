@@ -11,7 +11,9 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.logging.Logger;
 
-
+/**
+ * This class represents a JMS Producer.
+ */
 public class Producer {
     private static final Logger log = Logger.getLogger(Producer.class.getName());
     private static final int DEFAULT_ACKNOWLEDGE = Session.AUTO_ACKNOWLEDGE;
@@ -26,18 +28,43 @@ public class Producer {
     private String username;
     private String password;
 
+    /**
+     * Constructor with broker URL, username, and password.
+     * @param brokerURL The URL of the message broker.
+     * @param username The username for authentication.
+     * @param password The password for authentication.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public Producer(String brokerURL, String username, String password) throws JMSException {
         this.brokerURL = brokerURL;
         this.username = username;
         this.password = password;
     }
+
+    /**
+     * Constructor with only broker URL.
+     * @param brokerURL The URL of the message broker.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public Producer(String brokerURL) throws JMSException {
         this.brokerURL = brokerURL;
     }
+
+    /**
+     * Default constructor using ActiveMQ default broker URL.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public Producer() throws JMSException {
         this(ActiveMQConnection.DEFAULT_BROKER_URL);
     }
 
+    /**
+     * Sets up the producer with the provided parameters.
+     * @param transacted Whether the session is transacted or not.
+     * @param queueBool True if it's a queue, false if it's a topic.
+     * @param destinationName The name of the queue or topic.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public void setup(boolean transacted, boolean queueBool, String destinationName) throws JMSException {
         setConnectionFactory(brokerURL, username, password);
         setConnection();
@@ -53,14 +80,31 @@ public class Producer {
                 + " , Destination: " + destinationName);
     }
 
+    /**
+     * Sets up the producer with the provided parameters, using default transacted value.
+     * @param queueBool True if it's a queue, false if it's a topic.
+     * @param destinationName The name of the queue or topic.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public void setup(boolean queueBool, String destinationName) throws JMSException {
         setup(DEFAULT_TRANSACTED, queueBool, destinationName);
     }
 
+    /**
+     * Sets up the producer with the provided parameters, using default transacted value and queue destination.
+     * @param destinationName The name of the queue.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public void setup(String destinationName) throws JMSException {
         setup(DEFAULT_TRANSACTED, true, destinationName);
     }
 
+    /**
+     * Sends a message using the producer.
+     * @param payload The payload of the message.
+     * @throws JMSException If an error occurs during JMS operations.
+     * @throws IllegalStateException If the payload type is not recognized.
+     */
     public void sendMessage(Object payload) throws JMSException {
         Message message;
         if (payload instanceof byte[]) {
@@ -80,6 +124,10 @@ public class Producer {
         producer.send(destination, message);
     }
 
+    /**
+     * Closes the JMS resources.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public void close() throws JMSException {
         if (producer != null) {
             producer.close();
@@ -95,6 +143,11 @@ public class Producer {
         }
     }
 
+    /**
+     * Commits the session if it's transacted.
+     * @param transacted True if the session is transacted, false otherwise.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
     public void commitSession(boolean transacted) throws JMSException {
         if (transacted){
             session.commit();

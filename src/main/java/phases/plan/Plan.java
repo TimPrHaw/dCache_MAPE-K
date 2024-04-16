@@ -8,6 +8,7 @@ import javax.jms.JMSException;
 import javax.jms.*;
 import java.util.logging.Logger;
 
+
 public class Plan {
     private static final Logger log = Logger.getLogger(Analyze.class.getName());
     private Consumer consumer = null;

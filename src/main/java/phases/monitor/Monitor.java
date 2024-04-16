@@ -36,7 +36,7 @@ public class Monitor implements Runnable {
         }
     }
 
-    public void addList(List<String> elementList){
+    private void addList(List<String> elementList){
         try {
             for (String element : elementList) {
                 if(list.size() == LISTSIZE){
