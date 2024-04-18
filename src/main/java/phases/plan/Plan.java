@@ -26,7 +26,7 @@ public class Plan {
     public void run() throws JMSException {
         log.info(this.getClass().getName() + " is running...");
         while (true) {
-            var message = consumer.run();
+            var message = consumer.receive();
             double tmp = (double)((ObjectMessage)message).getObject();
             checkMessageThenSend(planing(tmp));
         }

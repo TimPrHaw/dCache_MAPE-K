@@ -22,7 +22,7 @@ public class Execute {
 
     public void run() throws JMSException {
         while (true) {
-            var msg = consumer.run();
+            var msg = consumer.receive();
             exec((String) msg);
             producer.sendMessage(getValue());
         }

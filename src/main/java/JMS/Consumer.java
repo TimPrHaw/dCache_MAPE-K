@@ -41,7 +41,7 @@ public class Consumer {
     }
 
     /**
-     * Constructor with only broker URL.
+     * Constructor with broker URL.
      * @param brokerURL The URL of the message broker.
      * @throws JMSException If an error occurs during JMS operations.
      */
@@ -50,7 +50,7 @@ public class Consumer {
     }
 
     /**
-     * Default constructor using ActiveMQ default broker URL.
+     * Default constructor using default broker URL.
      * @throws JMSException If an error occurs during JMS operations.
      */
     public Consumer() throws JMSException {
@@ -58,17 +58,33 @@ public class Consumer {
     }
 
     /**
-     * Sets up the consumer with the provided parameters.
-     * @param queueBool True if it's a queue, false if it's a topic.
-     * @param queueName The name of the queue or topic.
+     * Set up the consumer with the provided parameters.
+     * @param isDestinationQueue True if it's a queue, false if it's a topic.
+     * @param destinationName The name of the queue or topic.
      * @throws JMSException If an error occurs during JMS operations.
      */
-    public void setup(Boolean queueBool, String queueName) throws JMSException {
+    public void setup(Boolean isDestinationQueue, String destinationName) throws JMSException {
         setConnectionFactory(brokerURL, username, password);
         setConnection();
         setSession(transacted, acknowledged);
-        setDestination(queueBool, queueName);
+        setDestination(isDestinationQueue, destinationName);
         setMessageConsumer();
+        log.info(this.getClass().getName()
+                + " setup setting: Broker URL: " + brokerURL
+                + " , Username: " + username
+                + " , transacted: " + transacted
+                + " , Acknowledged: " + acknowledged
+                + " , queue bool: " + isDestinationQueue
+                + " , Destination: " + destinationName);
+    }
+
+    /**
+     * Set up the default consumer with the provided parameters, using a queue as destination.
+     * @param destinationName The name of the queue or topic.
+     * @throws JMSException If an error occurs during JMS operations.
+     */
+    public void setup(String destinationName) throws JMSException {
+        setup(true, destinationName);
     }
 
     /**
@@ -76,7 +92,7 @@ public class Consumer {
      * @return The received message.
      * @throws JMSException If an error occurs during JMS operations.
      */
-    public Message runGetMessage() throws JMSException {
+    public Message receiveMessage() throws JMSException {
         Message t = consumer.receive(timeout);
         //log.info(this.getClass().getName() + " received " + t.getClass().getSimpleName() + " payload: " + ((TextMessage)t).getText());
         return t;
@@ -88,7 +104,7 @@ public class Consumer {
      * @return The processed message payload.
      * @throws JMSException If an error occurs during JMS operations.
      */
-    public <T> T run() throws JMSException {
+    public <T> T receive() throws JMSException {
         Message message = consumer.receive(timeout);
         if (message instanceof TextMessage) {
             String payload = processTextMessage(message);
@@ -211,6 +227,7 @@ public class Consumer {
             connectionFactory = new ActiveMQConnectionFactory(brokerURL);
         }
         ((ActiveMQConnectionFactory)connectionFactory).setTrustAllPackages(true);
+        ((ActiveMQConnectionFactory)connectionFactory).setMessagePrioritySupported(true);
         // TODO: Hier muss vielleicht noch etwas hin
     }
 

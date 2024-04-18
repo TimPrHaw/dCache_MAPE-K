@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ProducerTest {
-    private String queueName = "test-queue";
-    private String topicName = "test/topic";
+    private final String queueName = "test-queue";
+    private final String topicName = "test/topic";
     private Producer testProducer;
     private MessageConsumer testMessageConsumerQueue;
 
@@ -83,6 +83,27 @@ public class ProducerTest {
     }
 
     /**
+    * Test sending multiple messages with varying priority levels to a queue and then consumes them.
+    * @throws JMSException if an error occurs in the Java Message Service.
+    * @throws InterruptedException if the thread is interrupted while waiting.
+    */
+    @Test
+    public void testSendPriorityMessage_setupNoTransactionQueue_SendInt_thenConsumeMessage() throws JMSException, InterruptedException {
+        String[] messages = {"Msg One", "Msg two", "Msg three", "Msg four", "Msg five"};
+        testProducer.setup(false, true, queueName);
+        testProducer.sendMessage(messages[2],4);
+        testProducer.sendMessage(messages[1], 7);
+        testProducer.sendMessage(messages[0], 9);
+        testProducer.sendMessage(messages[3], 3);
+        testProducer.sendMessage(messages[4], 2);
+
+        for (int i = 0; i < messages.length; i++) {
+            Message message = testMessageConsumerQueue.receive(5000);
+            Assert.assertEquals(((TextMessage) message).getText(), messages[i]);
+        }
+    }
+
+    /**
      * Test sending an int value and consuming the message.
      * @throws JMSException If an error occurs during JMS operations.
      */
@@ -123,17 +144,25 @@ public class ProducerTest {
     }
 
     /**
-     * Test sending a text message with transaction and committing the session, then consuming the message.
+     * Test sending a multiple text message with transaction and committing the session, then consuming the message.
      * @throws JMSException If an error occurs during JMS operations.
      */
     @Test
     public void testSendMessage_setupWithTransactionQueue_SendTextAndCommit_thenConsumeMessage() throws JMSException{
-        String testInput = "Test Text";
+        String[] testInput = {"Test1", "Test2", "Test3"};
         testProducer.setup(true, true, queueName);
-        testProducer.sendMessage(testInput);
-        testProducer.commitSession(true);
-        Message consumedMessage = testMessageConsumerQueue.receive(5000);
-        Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
+        testProducer.sendMessage(testInput[0]);
+        testProducer.sendMessage(testInput[1]);
+        testProducer.sendMessage(testInput[2]);
+
+        Message consumedMessage = testMessageConsumerQueue.receive(100);
+        Assert.assertNull(consumedMessage);
+
+        testProducer.commitMessages();
+        for (int i = 0; i < testInput.length; i++) {
+            Message message = testMessageConsumerQueue.receive(5000);
+            Assert.assertEquals(((TextMessage) message).getText(),testInput[i]);
+        }
     }
 
 
@@ -203,7 +232,7 @@ public class ProducerTest {
         testedProducer.setup(true, false, topicName);
         String testInput = "Test Text";
         testedProducer.sendMessage(testInput);
-        testedProducer.commitSession(true);
+        testedProducer.commitMessages();
 
         Thread.sleep(100);
         testedProducer.close();
@@ -242,7 +271,7 @@ public class ProducerTest {
         byte[] testInput = {10,20,30,40,50};
         testProducer.setup(true, true, queueName);
         testProducer.sendMessage(testInput);
-        testProducer.commitSession(true);
+        testProducer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         byte[] data = new byte[(int)((BytesMessage) consumedMessage).getBodyLength()];
         ((BytesMessage) consumedMessage).readBytes(data);
@@ -296,7 +325,7 @@ public class ProducerTest {
         testInput.put("key_10", true);
         testProducer.setup(true, true, queueName);
         testProducer.sendMessage(testInput);
-        testProducer.commitSession(true);
+        testProducer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         Map<String, Object> map = new HashMap<>();
         Enumeration<String> keys = ((MapMessage) consumedMessage).getMapNames();
@@ -336,7 +365,7 @@ public class ProducerTest {
         testInput.put("key_9", producedByte);
         testProducer.setup(true, true, queueName);
         testProducer.sendMessage(testInput);
-        testProducer.commitSession(true);
+        testProducer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         byte[] consumedByte = (byte[]) ((MapMessage) consumedMessage)
                 .getObject((String) ((MapMessage) consumedMessage).getMapNames().nextElement());
@@ -374,7 +403,7 @@ public class ProducerTest {
         Object[] testInput = {12, "StreamTest", '2'};
         testProducer.setup(true, true, queueName);
         testProducer.sendMessage(testInput);
-        testProducer.commitSession(true);
+        testProducer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         StreamMessage streamMessage = (StreamMessage) consumedMessage;
         ArrayList<Object> payload = new ArrayList<>();
@@ -419,7 +448,7 @@ public class ProducerTest {
         Producer producer = new Producer();
         producer.setup(true, true, queueName);
         producer.sendMessage(testObjectClass);
-        producer.commitSession(true);
+        producer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         ObjectMessage aaa = ((ObjectMessage) consumedMessage);
         TestObjectClass testObjectClass1 = (TestObjectClass) aaa.getObject();
@@ -458,6 +487,7 @@ public class ProducerTest {
     private MessageConsumer createTestConsumer(String destination) throws JMSException {
         ConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
         ((ActiveMQConnectionFactory)connectionFactory).setTrustAllPackages(true);
+        ((ActiveMQConnectionFactory)connectionFactory).setMessagePrioritySupported(true);
         Connection testConnection = connectionFactory.createConnection();
         testConnection.start();
         Session testSession = testConnection.createSession();

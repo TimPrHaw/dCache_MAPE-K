@@ -25,7 +25,7 @@ public class Analyze {
 
     public void run() throws JMSException {
         while (true) {
-            Message abc = consumer.runGetMessage();
+            Message abc = consumer.receiveMessage();
             String ttt = ((TextMessage) abc).getText();
             doThings(ttt);
             log.info(this.getClass().getSimpleName() + " send: " + value);

@@ -26,7 +26,7 @@ public class SimActor{
         log.info(this.getClass().getName()+" is running...");
 
         while(true){
-            var value = consumer.run();
+            var value = consumer.receive();
             if (value instanceof ObjectMessage){
                 double msg = Double.parseDouble(((ObjectMessage)value).getObject().toString());
                 if (msg > 0){

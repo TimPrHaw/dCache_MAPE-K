@@ -70,7 +70,7 @@ public class SimSensor implements Runnable{
         }
     }
     private void consumeMsg() throws JMSException {
-        var msg = consumer.run();
+        var msg = consumer.receive();
         if (msg != null) {
             var val = ((ObjectMessage) msg).getObject();
             if (val instanceof Boolean) {

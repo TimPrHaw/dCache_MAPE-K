@@ -7,6 +7,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import javax.management.*;
+import java.util.Hashtable;
 
 import javax.jms.*;
 import java.util.HashMap;
@@ -42,13 +44,14 @@ public class ConsumerTest {
      * @throws JMSException If an error occurs during JMS operations.
      */
     @Test
-    public void setupQueue_ConsumeTextMessage_runGetMessage() throws JMSException {
+    public void setupQueue_ConsumeTextMessage_receiveGetMessage() throws JMSException {
         String testMessage = "Hello World";
         consumer.setup(true, queueName);
         producer.setup(true, queueName);
 
         producer.sendMessage(testMessage);
-        Message test = consumer.runGetMessage();
+
+        Message test = consumer.receiveMessage();
         TextMessage textMessage = (TextMessage) test;
 
         Assert.assertNotNull(test);
@@ -67,7 +70,7 @@ public class ConsumerTest {
         producer.setup(true, queueName);
 
         producer.sendMessage(testInput);
-        byte[] test = consumer.run();
+        byte[] test = consumer.receive();
 
         Assert.assertNotNull(test);
         Assert.assertArrayEquals(testInput, test);
@@ -94,7 +97,7 @@ public class ConsumerTest {
         producer.setup(true, queueName);
 
         producer.sendMessage(testInput);
-        Map<String, Object> test = consumer.run();
+        Map<String, Object> test = consumer.receive();
 
         Assert.assertNotNull(test);
         Assert.assertEquals(testInput, test);
@@ -112,7 +115,7 @@ public class ConsumerTest {
         producer.setup(true, queueName);
 
         producer.sendMessage(testMessage);
-        String test = consumer.run();
+        String test = consumer.receive();
 
         Assert.assertNotNull(test);
         Assert.assertEquals(testMessage, test);
@@ -130,7 +133,7 @@ public class ConsumerTest {
         producer.setup(true, queueName);
 
         producer.sendMessage(testObjectClass);
-        ObjectMessage test = consumer.run();
+        ObjectMessage test = consumer.receive();
 
         TestObjectClass testObjectClassConsume = (TestObjectClass) test.getObject();
 
@@ -150,7 +153,7 @@ public class ConsumerTest {
         producer.setup(true, queueName);
 
         producer.sendMessage(testInput);
-        Object[] test = consumer.run();
+        Object[] test = consumer.receive();
 
         Assert.assertNotNull(test);
         Assert.assertArrayEquals(testInput, test);
