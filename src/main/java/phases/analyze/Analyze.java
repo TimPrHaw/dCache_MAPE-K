@@ -2,6 +2,7 @@ package phases.analyze;
 
 import JMS.Producer;
 import JMS.Consumer;
+import org.json.JSONObject;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -27,16 +28,25 @@ public class Analyze {
         while (true) {
             Message abc = consumer.receiveMessage();
             String ttt = ((TextMessage) abc).getText();
-            doThings(ttt);
+            JSONObject monData = new JSONObject(ttt);
+            doThings(monData);
             log.info(this.getClass().getSimpleName() + " send: " + value);
             producer.sendMessage(value);
         }
     }
 
-    private void doThings(String text){ //TODO: utilityFunc()
+    private void doThings(JSONObject monitoringData){ //TODO: utilityFunc()
+
+        if (monitoringData == null || monitoringData.isEmpty()) {
+            log.info("No monitoring data received");
+            return;
+        }
+        log.info("Received monitoring data: " + monitoringData.toString());
+
+         /*
         List<Double> resultList = new ArrayList<>();
 
-        String[] elements = text.substring(1, text.length() - 1).split(", ");
+       String[] elements = text.substring(1, text.length() - 1).split(", ");
 
         for (String element : elements) {
             try {
@@ -53,7 +63,7 @@ public class Analyze {
         for (double i : resultList) {
             tmp += i;
         }
-        this.value = tmp /resultList.size();
+        this.value = tmp /resultList.size();*/
     }
 
 }

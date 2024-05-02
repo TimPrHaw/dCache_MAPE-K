@@ -22,7 +22,8 @@ public class Main {
         new Thread(() -> {
             Monitor monitor;
             try {
-                monitor = new Monitor("json", topic, bootstrapServer);
+//                monitor = new Monitor("json", topic, bootstrapServer);
+                monitor = new Monitor("json");
                 monitor.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
