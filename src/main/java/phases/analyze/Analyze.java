@@ -33,7 +33,7 @@ public class Analyze {
         }
     }
 
-    private void doThings(String text){
+    private void doThings(String text){ //TODO: utilityFunc()
         List<Double> resultList = new ArrayList<>();
 
         String[] elements = text.substring(1, text.length() - 1).split(", ");
