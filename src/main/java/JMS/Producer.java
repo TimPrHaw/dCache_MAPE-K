@@ -51,7 +51,7 @@ public class Producer {
     }
 
     /**
-     * Default constructor using default broker URL.
+     * Default constructor using default local broker URL.
      * @throws JMSException If an error occurs during JMS operations.
      */
     public Producer() throws JMSException {
@@ -60,16 +60,14 @@ public class Producer {
 
     /**
      * Set up the producer with the provided parameters.
-     * @param transacted Whether the session is transacted or not.
      * @param isDestinationQueue True if it's a queue, false if it's a topic.
      * @param destinationName The name of the queue or topic.
      * @throws JMSException If an error occurs during JMS operations.
      */
-    public void setup(boolean transacted, boolean isDestinationQueue, String destinationName) throws JMSException {
-        this.transacted = transacted;
+    public void setup(boolean isDestinationQueue, String destinationName) throws JMSException {
         setConnectionFactory(brokerURL, username, password);
         setConnection();
-        setSession(transacted, acknowledged);
+        setSession(this.transacted, acknowledged);
         setDestination(isDestinationQueue, destinationName);
         setMessageProducer();
         log.info(this.getClass().getName()
@@ -82,24 +80,21 @@ public class Producer {
     }
 
     /**
-     * Set up the producer with the provided parameters, without local transaction.
-     * @param isDestinationQueue True if it's a queue, false if it's a topic.
-     * @param destinationName The name of the queue or topic.
-     * @throws JMSException If an error occurs during JMS operations.
-     */
-    public void setup(boolean isDestinationQueue, String destinationName) throws JMSException {
-        setup(DEFAULT_TRANSACTED, isDestinationQueue, destinationName);
-    }
-
-    /**
-     * Set up the default producer with the provided parameters, using a queue as the destination without local transaction.
+     * Set up the default producer with the provided parameters, using a queue as the destination..
      * @param destinationName The name of the queue.
      * @throws JMSException If an error occurs during JMS operations.
      */
     public void setup(String destinationName) throws JMSException {
-        setup(DEFAULT_TRANSACTED, true, destinationName);
+        setup(true, destinationName);
     }
 
+    /**
+     * Sets whether the session is transacted or not
+     * @param transacted True if the session is transacted, false otherwise
+     */
+    public void setTransacted(boolean transacted) {
+        this.transacted = transacted;
+    }
 
     /**
      * Sends a message.

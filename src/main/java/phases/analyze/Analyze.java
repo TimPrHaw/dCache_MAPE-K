@@ -19,19 +19,42 @@ public class Analyze {
     public Analyze(boolean queueBool, String inputQueue, String outputQueue) throws JMSException {
         this.consumer = new Consumer();
         this.producer = new Producer();
-        consumer.setup(queueBool, inputQueue);
-        producer.setup(queueBool, outputQueue);
+        consumer.setup(inputQueue);
+        producer.setup(outputQueue);
     }
 
     public void run() throws JMSException {
-        while (true) {
-            Message abc = consumer.receiveMessage();
-            String ttt = ((TextMessage) abc).getText();
-            doThings(ttt);
-            log.info(this.getClass().getSimpleName() + " send: " + value);
-            producer.sendMessage(value);
+        while (true){
+            String inputString = consumer.receive();
+            String decidedOutput = decisionFunction(inputString);
+            log.info(this.getClass().getSimpleName() + " send: " + decidedOutput);
+            producer.sendMessage(decidedOutput);
         }
     }
+
+    private double utilityFunction(String inputString){
+        double w1 = 0.7;
+        double w2 = 0.375;
+        double v1 = 2;
+        double v2 = 2;
+        return w1 * v1 + w2 * v2;
+    }
+
+    private String decisionFunction(String inputValue){
+        String outputString = "";
+        double u = utilityFunction(inputValue);
+        if(u <= 0){
+            outputString = "case1";
+        } else if (u >= 0 && u <= 0.5) {
+            outputString = "case2";
+        } else if (u >= 0.5 && u <= 1) {
+            outputString = "case3";
+        } else {
+            outputString = "case4";
+        }
+        return outputString;
+    }
+
 
     private void doThings(String text){
         List<Double> resultList = new ArrayList<>();

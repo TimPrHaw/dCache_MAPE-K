@@ -50,7 +50,7 @@ public class Consumer {
     }
 
     /**
-     * Default constructor using default broker URL.
+     * Default constructor using default local broker URL.
      * @throws JMSException If an error occurs during JMS operations.
      */
     public Consumer() throws JMSException {
