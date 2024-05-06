@@ -59,13 +59,14 @@ public class Analyze {
     }
 
 
-    private void doThings(JSONObject monitoringData){ //TODO: utilityFunc()
+    private void doThings(JSONObject monitoringData) { //TODO: utilityFunc()
 
         if (monitoringData == null || monitoringData.isEmpty()) {
             log.info("No monitoring data received");
             return;
         }
         log.info("Received monitoring data: " + monitoringData.toString());
+
 
          /*
         List<Double> resultList = new ArrayList<>();
@@ -88,6 +89,8 @@ public class Analyze {
             tmp += i;
         }
         this.value = tmp /resultList.size();
+
+          */
     }
 
 }
