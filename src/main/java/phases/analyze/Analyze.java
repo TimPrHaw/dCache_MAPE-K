@@ -2,6 +2,7 @@ package phases.analyze;
 
 import JMS.Producer;
 import JMS.Consumer;
+import org.json.JSONObject;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -19,16 +20,18 @@ public class Analyze {
     public Analyze(boolean queueBool, String inputQueue, String outputQueue) throws JMSException {
         this.consumer = new Consumer();
         this.producer = new Producer();
-        consumer.setup(inputQueue);
-        producer.setup(outputQueue);
+        consumer.setup(queueBool, inputQueue);
+        producer.setup(queueBool, outputQueue);
     }
 
     public void run() throws JMSException {
-        while (true){
-            String inputString = consumer.receive();
-            String decidedOutput = decisionFunction(inputString);
-            log.info(this.getClass().getSimpleName() + " send: " + decidedOutput);
-            producer.sendMessage(decidedOutput);
+        while (true) {
+            Message abc = consumer.receiveMessage();
+            String ttt = ((TextMessage) abc).getText();
+            JSONObject monData = new JSONObject(ttt);
+            doThings(monData);
+            log.info(this.getClass().getSimpleName() + " send: " + value);
+            producer.sendMessage(value);
         }
     }
 
@@ -56,10 +59,18 @@ public class Analyze {
     }
 
 
-    private void doThings(String text){
+    private void doThings(JSONObject monitoringData){ //TODO: utilityFunc()
+
+        if (monitoringData == null || monitoringData.isEmpty()) {
+            log.info("No monitoring data received");
+            return;
+        }
+        log.info("Received monitoring data: " + monitoringData.toString());
+
+         /*
         List<Double> resultList = new ArrayList<>();
 
-        String[] elements = text.substring(1, text.length() - 1).split(", ");
+       String[] elements = text.substring(1, text.length() - 1).split(", ");
 
         for (String element : elements) {
             try {

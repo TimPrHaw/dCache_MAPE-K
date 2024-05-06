@@ -22,7 +22,8 @@ public class Main {
         new Thread(() -> {
             Monitor monitor;
             try {
-                monitor = new Monitor("kafka", topic, bootstrapServer);
+//                monitor = new Monitor("json", topic, bootstrapServer);
+                monitor = new Monitor("json");
                 monitor.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
@@ -69,14 +70,14 @@ public class Main {
             }
         }).start();
         // Start sensor simulation
-        new Thread(() -> {
-            SimSensor simSensor;
-            try {
-                simSensor = new SimSensor(simTicksInMilliSec, simStartTemp, topic, bootstrapServer, key, queueBool, "sim-queue");
-                simSensor.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
-        }).start();
+//        new Thread(() -> {
+//            SimSensor simSensor;
+//            try {
+//                simSensor = new SimSensor(simTicksInMilliSec, simStartTemp, topic, bootstrapServer, key, queueBool, "sim-queue");
+//                simSensor.run();
+//            } catch (JMSException e) {
+//                throw new RuntimeException(e);
+//            }
+//        }).start();
     }
 }
