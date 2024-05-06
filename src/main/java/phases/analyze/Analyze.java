@@ -38,18 +38,17 @@ public class Analyze implements Runnable{
     }
 
     private void sendMessageToJMS(String analyzedData) throws JMSException {
-        if (analyzedData != null || !analyzedData.equals("case1")) {
+        if (analyzedData != null || !analyzedData.equals("fine")) {
             log.info(this.getClass().getSimpleName() + " send: " + analyzedData);
             producer.sendMessage(analyzedData);
         }
     }
 
-    private double utilityFunction(String inputString){
-        double w1 = 0.7;
-        double w2 = 0.375;
-        double v1 = 2;
-        double v2 = 2;
-        return w1 * v1 + w2 * v2;
+    private double utilityFunction(int num_err_log_entries, int media_errors, int critical_warning){
+        double w1 = 0.2;
+        double w2 = 0.25;
+        double w3 = 0.7;
+        return num_err_log_entries * w1 + media_errors * w2 + critical_warning * w3;
     }
 
     private String decisionFunction(JSONObject monitoringData) {
@@ -59,18 +58,22 @@ public class Analyze implements Runnable{
         }
         log.info("Received monitoring data: " + monitoringData.toString());
 
-        String outputString = "";
-
-        double u = utilityFunction(monitoringData.toString());
-        if(u <= 0){
-            outputString = "case1";
-        } else if (u >= 0 && u <= 0.5) {
-            outputString = "case2";
-        } else if (u >= 0.5 && u <= 1) {
-            outputString = "case3";
-        } else {
-            outputString = "case4";
+        if (monitoringData.getInt("critical_warning") >= 330){
+            return "warning";
         }
-        return outputString;
+
+        double u = utilityFunction(
+                monitoringData.getInt("num_err_log_entries"),
+                monitoringData.getInt("media_errors"),
+                monitoringData.getInt("critical_warning"));
+
+        if(u <= 500){
+            return "fine";
+        } else if (u > 500 && u <= 550) {
+            return "case1";
+        } else if (u > 550 && u <= 600) {
+            return "case2";
+        }
+        return "case3";
     }
 }
