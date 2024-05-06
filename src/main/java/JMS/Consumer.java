@@ -66,7 +66,7 @@ public class Consumer {
     public void setup(Boolean isDestinationQueue, String destinationName) throws JMSException {
         setConnectionFactory(brokerURL, username, password);
         setConnection();
-        setSession(transacted, acknowledged);
+        setSession(this.transacted, acknowledged);
         setDestination(isDestinationQueue, destinationName);
         setMessageConsumer();
         log.info(this.getClass().getName()
