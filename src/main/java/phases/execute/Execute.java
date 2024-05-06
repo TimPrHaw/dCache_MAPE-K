@@ -13,11 +13,15 @@ public class Execute {
     private Producer producer = null;
     private double value;
 
-    public Execute(boolean queueBool, String inputQueue, String outputQueue) throws JMSException {
+    public Execute(boolean queueBool, String subscribedChannel, String publishedChannel) throws JMSException {
         this.consumer = new Consumer();
         this.producer = new Producer();
-        consumer.setup(queueBool, inputQueue);
-        producer.setup(queueBool, outputQueue);
+        consumer.setup(queueBool, subscribedChannel);
+        producer.setup(queueBool, publishedChannel);
+    }
+
+    public Execute() throws JMSException {
+        this(true, "plan-execute-queue", "execute-out-queue");
     }
 
     public void run() throws JMSException {

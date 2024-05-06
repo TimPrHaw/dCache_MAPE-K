@@ -1,24 +1,22 @@
 package phases.monitor;
 
 import JMS.Producer;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import javax.jms.JMSException;
-import java.util.LinkedList;
-import java.util.List;
+import java.io.IOException;
 import java.util.logging.Logger;
 
 public class Monitor implements Runnable {
     private static final Logger log = Logger.getLogger(Monitor.class.getName());
     private final MessageReceiver messageReceiver;
-    private final List<Double> list;
-    private final int LISTSIZE = 4;
-    //private KafkaCons kafkaCons;
-    private Producer producer;
+    private final Producer producer;
+    private final Integer THREAD_SLEEP_TIME = 5000;
 
     public Monitor(String messageReceiver, String topic, String bootstrapServers) throws JMSException {
-        list = new LinkedList<>();
         producer = new Producer();
-        producer.setup("analyze-queue");
+        producer.setup("monitor-analyze-queue");
         this.messageReceiver = MessageReceiverFactory.createMessageReceiver(messageReceiver, topic, bootstrapServers);
         log.info(this.getClass().getName() + " built messageReceiver: " + this.messageReceiver.toString());
     }
@@ -30,38 +28,21 @@ public class Monitor implements Runnable {
     @Override
     public void run(){
         while(true){
-            List<String> valueList = messageReceiver.messageReceive();
-            addList(valueList);
-            pushToJMS();
-        }
-    }
-
-    private void addList(List<String> elementList){
-        try {
-            for (String element : elementList) {
-                if(list.size() == LISTSIZE){
-                    list.remove(0);
-                }
-                list.add(Double.parseDouble(element));
-                log.info("List update: " + list);
+            try {
+                JSONObject receivedJSON = messageReceiver.receiveMessage();
+                sendMessageToJMS(receivedJSON);
+                Thread.sleep(THREAD_SLEEP_TIME);
+            } catch (NullPointerException | UnsupportedOperationException | JSONException | InterruptedException e) {
+                throw new RuntimeException(e);
             }
-        } catch (NumberFormatException e){
-            log.info("Ungültiges Format für die Umwandlung in einen double-Wert: " + elementList);
-            e.printStackTrace();
         }
-
     }
 
-    private void pushToJMS(){
+    private void sendMessageToJMS(JSONObject monitoringData){
         try {
-            producer.sendMessage(getList());
+            producer.sendMessage(monitoringData.toString());
         } catch (JMSException ex) {
             ex.printStackTrace();
         }
-    }
-
-    private String getList() {
-        String t = list.toString();
-        return t;
     }
 }

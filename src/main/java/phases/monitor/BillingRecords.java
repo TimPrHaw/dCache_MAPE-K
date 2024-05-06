@@ -4,7 +4,6 @@ import JMS.Producer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import javax.jms.JMSException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -12,8 +11,8 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 
-public class MonitorBilling implements Runnable {
-    private static final Logger log = Logger.getLogger(MonitorBilling.class.getName());
+public class BillingRecords implements MessageReceiver {
+    private static final Logger log = Logger.getLogger(BillingRecords.class.getName());
     /**
      * Find out the operating system type first (Linux, MacOS, not supported: Windows)
      */
@@ -31,43 +30,31 @@ public class MonitorBilling implements Runnable {
     private final int LINES_IN_BILLING_RECORD = 2000;
 
 
-    public MonitorBilling(String messageReceiver, String topic, String bootstrapServers) throws JMSException {
+    public BillingRecords() {
         log.info("OS_TYPE is: %24s%n" + OS_TYPE);
 
         if (!OS_TYPE.contains("nux") && !OS_TYPE.contains("darwin")) {
             System.out.println("OS not supported!");
             System.exit(1);
         }
-        producer = new Producer();
-        producer.setup("analyze-queue");
         this.lineCounter = 0;
-        if (topic != null || bootstrapServers != null) {
-            this.messageReceiver = MessageReceiverFactory.createMessageReceiver(messageReceiver, topic, bootstrapServers);
-            log.info(this.getClass().getName() + " built messageReceiver: " + this.messageReceiver.toString());
-        }
-    }
-    public MonitorBilling(String messageReceiver) throws JMSException {
-        this(messageReceiver, null, null);
     }
 
     @Override
-    public void run(){
+    public JSONObject receiveMessage() {
         JSONObject diskInfo = null;
         JSONObject billingInfo = null;
         JSONObject combinedInfo = null;
-        while(true){
-            try {
-                diskInfo = this.getDiskInfo();
-                billingInfo = this.getBillingInfo();
-                combinedInfo = this.combineTwoJsonObjects(diskInfo, billingInfo);
-                pushToJMS(combinedInfo);
-                Thread.sleep(THREAD_SLEEP_TIME);
-            } catch (IOException  | NullPointerException  | UnsupportedOperationException  | JSONException
-                     | InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+        try {
+            diskInfo = this.getDiskInfo();
+            billingInfo = this.getBillingInfo();
+            combinedInfo = this.combineTwoJsonObjects(diskInfo, billingInfo);
+            return combinedInfo;
+        } catch (IOException  | NullPointerException  | UnsupportedOperationException  | JSONException e) {
+            throw new RuntimeException(e);
         }
     }
+
     private JSONObject getBillingInfo() {
         Object transferSize = null;
         JSONObject billingJSON = null;
@@ -96,13 +83,6 @@ public class MonitorBilling implements Runnable {
             return new JSONObject().putOpt("transferSize", transferSize);
         }
         return new JSONObject(noBilling);
-    }
-    private void pushToJMS(JSONObject monitoringData){
-        try {
-            producer.sendMessage(monitoringData.toString());
-        } catch (JMSException ex) {
-            ex.printStackTrace();
-        }
     }
 
     /**
@@ -165,6 +145,7 @@ public class MonitorBilling implements Runnable {
         }
         return analyseJSON;
     }
+
     /**
      * This method returns a json object combining two input json objects
      * @return JSONObject or null

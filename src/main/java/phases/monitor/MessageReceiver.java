@@ -1,6 +1,6 @@
 package phases.monitor;
 
-import java.util.List;
+import org.json.JSONObject;
 
 /**
  * Interface representing a message receiver.
@@ -8,7 +8,7 @@ import java.util.List;
 public interface MessageReceiver {
     /**
      * Receives a message.
-     * @return The received message as a list of strings.
+     * @return The received message as a JSONObject.
      */
-    List<String> messageReceive();
+    JSONObject receiveMessage();
 }

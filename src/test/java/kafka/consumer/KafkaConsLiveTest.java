@@ -34,6 +34,7 @@ class KafkaConsLiveTest {
         Awaitility.setDefaultPollInterval(ofMillis(50L));
     }
 
+    // TODO: TEST mit json
     @Test
     void givenANewCustomKafkaListener_thenConsumesAllMessages() {
         String testTopic = "test-topic-consumed-message";
@@ -43,7 +44,7 @@ class KafkaConsLiveTest {
         KafkaCons cons = new KafkaCons(testTopic, bootstrapServers);
 
         publishMessage(testTopic,"1", "2", "3", "44", "55");
-        consumedMessages = cons.messageReceive();
+        //consumedMessages = cons.messageReceive();
 
         Assert.assertEquals("[1, 2, 3, 44, 55]", consumedMessages.toString());
 }

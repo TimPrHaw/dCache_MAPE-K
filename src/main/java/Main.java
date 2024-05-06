@@ -15,21 +15,19 @@ public class Main {
         String key = "key_1";
         boolean queueBool = true;
 
-        int simTicksInMilliSec = 3 * 1000;
-        int simStartTemp = 20;
-
         // Start Monitor
         new Thread(() -> {
             Monitor monitor;
             try {
-//                monitor = new Monitor("json", topic, bootstrapServer);
-                monitor = new Monitor("json");
+                monitor = new Monitor("billingrecords");
                 monitor.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
             }
         }).start();
         // Start Analyze
+
+        /**
         new Thread(() -> {
             Analyze analyze;
             try {
@@ -59,25 +57,6 @@ public class Main {
                 throw new RuntimeException(e);
             }
         }).start();
-        // Start actor simulation
-        new Thread(() -> {
-            SimActor simActor;
-            try {
-                simActor = new SimActor(queueBool, "actor-queue", "sim-queue", simStartTemp);
-                simActor.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
-        }).start();
-        // Start sensor simulation
-//        new Thread(() -> {
-//            SimSensor simSensor;
-//            try {
-//                simSensor = new SimSensor(simTicksInMilliSec, simStartTemp, topic, bootstrapServer, key, queueBool, "sim-queue");
-//                simSensor.run();
-//            } catch (JMSException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }).start();
+         */
     }
 }

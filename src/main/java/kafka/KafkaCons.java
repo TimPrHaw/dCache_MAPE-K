@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.json.JSONObject;
 import phases.monitor.MessageReceiver;
 
 
@@ -44,20 +45,20 @@ public class KafkaCons implements MessageReceiver {
     }
 
     @Override
-    public List<String> messageReceive() {
+    public JSONObject receiveMessage() {
         if (consumer.subscription().isEmpty()) {
             subscribe();
         }
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(10000));
             if (!records.isEmpty()) {
-                List<String> recordList = new ArrayList<>();
+                JSONObject kafkaJSON = null;
                 for (ConsumerRecord<String, String> record : records) {
                     log.info("Get Value: " + record.value());
-                    recordList.add(record.value());
+                    kafkaJSON.put(record.key(), record.value());
                 }
                 consumer.commitSync(); // commitAsync(): falls Latenz reduziert oder der Durchsatz erhoeht werden soll
-                return recordList;
+                return kafkaJSON;
             }
         }
     }
