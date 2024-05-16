@@ -7,6 +7,10 @@ import simulation.SimActor;
 import simulation.SimSensor;
 
 import javax.jms.JMSException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
@@ -27,11 +31,10 @@ public class Main {
         }).start();
         // Start Analyze
 
-        /**
         new Thread(() -> {
             Analyze analyze;
             try {
-                analyze = new Analyze(queueBool, "analyze-queue", "plan-queue");
+                analyze = new Analyze();
                 analyze.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
@@ -41,7 +44,7 @@ public class Main {
         new Thread(() -> {
             Plan plan;
             try {
-                plan = new Plan(queueBool, "plan-queue", "execute-queue");
+                plan = new Plan();
                 plan.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
@@ -51,12 +54,11 @@ public class Main {
         new Thread(() -> {
             Execute execute = null;
             try {
-                execute = new Execute(queueBool, "execute-queue", "actor-queue");
+                execute = new Execute();
                 execute.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
             }
         }).start();
-         */
     }
 }

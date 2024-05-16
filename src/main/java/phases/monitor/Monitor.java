@@ -5,7 +5,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import javax.jms.JMSException;
-import java.io.IOException;
 import java.util.logging.Logger;
 
 public class Monitor implements Runnable {

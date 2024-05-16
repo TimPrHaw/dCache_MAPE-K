@@ -11,6 +11,11 @@ public class Analyze implements Runnable{
     private static final Logger log = Logger.getLogger(Analyze.class.getName());
     private Consumer consumer = null;
     private Producer producer = null;
+    private JSONObject monitorData = null;
+    private int lastCriticalWarning = 0;
+    private int lastNumErrLogEntries = 0;
+    private int lastMediaErrors = 0;
+
 
     public Analyze(boolean isDestinationQueue, String subscribedChannel, String publishedChannel) throws JMSException {
         this.consumer = new Consumer();
@@ -28,44 +33,36 @@ public class Analyze implements Runnable{
         while (true) {
             try {
                 String receivedMessage = consumer.receive();
-                JSONObject monData = new JSONObject(receivedMessage);
-                String decidedOutput = decisionFunction(monData);
-                sendMessageToJMS(decidedOutput);
+                this.monitorData = new JSONObject(receivedMessage);
+                if (isAdaptationRequired()) {
+                    String decidedOutput = decisionFunction();
+                    triggerPlanner(decidedOutput);
+                }
             } catch (JMSException ex) {
                 throw new RuntimeException(ex);
             }
         }
     }
 
-    private void sendMessageToJMS(String analyzedData) throws JMSException {
-        if (analyzedData != null || !analyzedData.equals("fine")) {
-            log.info(this.getClass().getSimpleName() + " send: " + analyzedData);
-            producer.sendMessage(analyzedData);
-        }
+    private boolean isAdaptationRequired(){
+        return this.lastCriticalWarning != monitorData.getInt("criticalWarning") || this.lastNumErrLogEntries != monitorData.getInt("numErrLogEntries") || this.lastMediaErrors != monitorData.getInt("mediaErrors");
     }
 
-    private double utilityFunction(int num_err_log_entries, int media_errors, int critical_warning){
-        double w1 = 0.2;
-        double w2 = 0.25;
-        double w3 = 0.7;
-        return num_err_log_entries * w1 + media_errors * w2 + critical_warning * w3;
-    }
-
-    private String decisionFunction(JSONObject monitoringData) {
-        if (monitoringData == null || monitoringData.isEmpty()) {
+    private String decisionFunction() {
+        if (monitorData == null || monitorData.isEmpty()) {
             log.info("No monitoring data received");
             return null;
         }
-        log.info("Received monitoring data: " + monitoringData.toString());
+        log.info("Received monitoring data: " + monitorData.toString());
 
-        if (monitoringData.getInt("critical_warning") >= 330){
+        if (monitorData.getInt("critical_warning") >= 330){
             return "warning";
         }
 
         double u = utilityFunction(
-                monitoringData.getInt("num_err_log_entries"),
-                monitoringData.getInt("media_errors"),
-                monitoringData.getInt("critical_warning"));
+                monitorData.getInt("num_err_log_entries"),
+                monitorData.getInt("media_errors"),
+                monitorData.getInt("critical_warning"));
 
         if(u <= 500){
             return "fine";
@@ -75,5 +72,22 @@ public class Analyze implements Runnable{
             return "case2";
         }
         return "case3";
+    }
+
+    private double utilityFunction(int num_err_log_entries, int media_errors, int critical_warning){
+        double w1 = 0.2;
+        double w2 = 0.25;
+        double w3 = 0.7;
+        return num_err_log_entries * w1 + media_errors * w2 + critical_warning * w3;
+    }
+
+    private void triggerPlanner(String analyzedData) throws JMSException {
+        if (analyzedData != null || !analyzedData.equals("fine")) {
+            log.info(this.getClass().getSimpleName() + " send: " + analyzedData);
+            producer.sendMessage(analyzedData);
+            lastCriticalWarning = monitorData.getInt("criticalWarning");
+            lastNumErrLogEntries = monitorData.getInt("numErrLogEntries");
+            lastMediaErrors = monitorData.getInt("mediaErrors");
+        }
     }
 }
