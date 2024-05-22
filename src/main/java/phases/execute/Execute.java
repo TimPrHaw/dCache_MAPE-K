@@ -78,15 +78,15 @@ public class Execute implements Runnable{
      */
     private void selectAdaptationAction(String messageReceived){
         if(receivedAdaptation.MIGRATION.name().equals(messageReceived)){
-            JSONObject requstBody = new JSONObject();
+            JSONObject requestBody = new JSONObject();
             JSONArray targetPools = new JSONArray();
             targetPools.put(dCACHE_TARGET_POOLS);
-            requstBody.put("sourcePool", dCACHE_SOURCE_POOL);
-            requstBody.put("targetPools", targetPools);
+            requestBody.put("sourcePool", dCACHE_SOURCE_POOL);
+            requestBody.put("targetPools", targetPools);
             String creds = "admin#admin:dickerelch";
 
             request = HttpRequest.newBuilder()
-                    .POST(HttpRequest.BodyPublishers.ofString(requstBody.toString()))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
                     .uri(URI.create(URL))
                     .header("Authorization", "Basic " + Base64.getEncoder().encodeToString(creds.getBytes()))
                     .header("Content-Type", "application/json")

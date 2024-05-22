@@ -16,27 +16,30 @@ public class BillingRecords implements MessageReceiver {
      * Find out the operating system type first (supported Linux , not supported: Windows, MacOS)
      */
     private final static String OS_TYPE = System.getProperty("os.name").toLowerCase();
-    private Integer lineCounter;
+    private Integer billingLineCounter;
+    private Integer smartLineCounter;
 
-    private boolean mocking_smartctl = false;
+    private boolean mockingSmartCtl = false;
 
     /**
      * Path to the billing file TODO:!!!!! PLEASE CHANGE THIS PATH TO YOUR LOCAL PATH !!!!!
      */
-    private final String path = "./dcache-build-75393-billing.json";
+    private final String billingPath = "./dcache-build-75393-billing.json";
+    private final String smartPath = "./smart_one_line.json";
 
     private final int LINES_IN_BILLING_RECORD = 2000;
+    private final int LINES_IN_SMART_RECORD = 1;//20; //TODO: change to whatever is needed
 
 
     public BillingRecords() {
         log.info("OS_TYPE is: " + OS_TYPE);
 
-        if (!OS_TYPE.contains("nux")) {
-            System.out.println("OS not supported!");
-            mocking_smartctl = true;
-            System.exit(1);
+        if (!isSmartCtlInstalled() || !OS_TYPE.contains("nux")) {
+            System.out.println("smartctl is not available, proceeding with mocks...!");
+            mockingSmartCtl = true;
         }
-        this.lineCounter = 0;
+        this.billingLineCounter = 0;
+        this.smartLineCounter = 0;
     }
 
     @Override
@@ -57,19 +60,12 @@ public class BillingRecords implements MessageReceiver {
     private JSONObject getBillingInfo() {
         Object transferSize = null;
         JSONObject billingJSON = null;
-        String line = null;
         String noBilling = "{\"transferSize\":null}";
 
-        try (Stream<String> lines = Files.lines(Paths.get(path))) {
-            line = lines.skip(lineCounter).findFirst().get();
-//            System.out.println(line);
-            billingJSON = new JSONObject(line);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        lineCounter++;
-        if (lineCounter >= LINES_IN_BILLING_RECORD) {
-            lineCounter = 0;
+        billingJSON = readJsonLineByLine(billingPath, billingLineCounter);
+        billingLineCounter++;
+        if (billingLineCounter >= LINES_IN_BILLING_RECORD) {
+            billingLineCounter = 0;
         }
         if (billingJSON == null || billingJSON.isEmpty()){
             log.info("No billing data found!");
@@ -94,40 +90,51 @@ public class BillingRecords implements MessageReceiver {
      */
     public JSONObject getDiskInfo() throws IOException, NullPointerException, UnsupportedOperationException, JSONException {
 
-        JSONObject jsonObject = null;
+        JSONObject jsonObject = new JSONObject();
+        String jsonString = "";
+        String device = "Mock-up";
         JSONObject analyseJSON = new JSONObject();
-
-        if (OS_TYPE.contains("nux")) {
-
-            ProcessBuilder pb1 = new ProcessBuilder("lsblk", "-n", "--output", "NAME", "--nodeps");
-            Process proc1 = pb1.start();
-            String device = new String(proc1.getInputStream().readAllBytes()).trim();
-            ProcessBuilder pb2 = new ProcessBuilder("sudo", "smartctl", "-j", "-a", "/dev/" + device);
-            Process proc2 = pb2.start();
-            String jsonString = new String(proc2.getInputStream().readAllBytes());
-            if (jsonString == null || jsonString.isEmpty()) {
-                System.out.println("No disk information found!");
-                return null;
+        if (mockingSmartCtl) {
+            System.out.println("getDiskInfo: smartctl is not available, proceeding with mock..!");
+            jsonObject = readJsonLineByLine(smartPath, smartLineCounter);
+            smartLineCounter++;
+            if (smartLineCounter >= LINES_IN_SMART_RECORD) {
+                smartLineCounter = 0;
             }
-            jsonObject = new JSONObject(jsonString);
-            Object model_name = jsonObject.opt("model_name");
-            Object num_err_log_entries = jsonObject.optJSONObject("nvme_smart_health_information_log", new JSONObject()).opt("num_err_log_entries");
-            Object media_errors = jsonObject.optJSONObject("nvme_smart_health_information_log", new JSONObject()).opt("media_errors");
-            Object critical_warning = jsonObject.optJSONObject("nvme_smart_health_information_log", new JSONObject()).opt("critical_warning");
-            System.out.println();
-            System.out.printf("Disk device name: %20s%n", device);
-            System.out.printf("Model name: %49s%n", model_name);
-            System.out.printf("Number of Error-log entries: %5d%n", num_err_log_entries);
-            System.out.printf("Media Errors: %18d%n", media_errors);
-            System.out.printf("Critical Warning: %14d%n", critical_warning);
-
-            analyseJSON.putOpt("model_name", model_name);
-            analyseJSON.putOpt("num_err_log_entries", num_err_log_entries);
-            analyseJSON.putOpt("media_errors", media_errors);
-            analyseJSON.putOpt("critical_warning", critical_warning);
-            System.out.println(analyseJSON);
-
         }
+        else {
+            try {
+                ProcessBuilder pb1 = new ProcessBuilder("lsblk", "-n", "--output", "NAME", "--nodeps");
+                Process proc1 = pb1.start();
+                device = new String(proc1.getInputStream().readAllBytes()).trim();
+                ProcessBuilder pb2 = new ProcessBuilder("sudo", "smartctl", "-j", "-a", "/dev/" + device);
+                Process proc2 = pb2.start();
+                jsonString = new String(proc2.getInputStream().readAllBytes());
+                if (jsonString == null || jsonString.isEmpty()) {
+                    System.out.println("No disk information found!");
+                    return analyseJSON;
+                }
+                jsonObject = new JSONObject(jsonString);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        Object model_name = jsonObject.opt("model_name");
+        Object num_err_log_entries = jsonObject.optJSONObject("nvme_smart_health_information_log", new JSONObject()).opt("num_err_log_entries");
+        Object media_errors = jsonObject.optJSONObject("nvme_smart_health_information_log", new JSONObject()).opt("media_errors");
+        Object critical_warning = jsonObject.optJSONObject("nvme_smart_health_information_log", new JSONObject()).opt("critical_warning");
+        System.out.println();
+        System.out.printf("Disk device name: %20s%n", device);
+        System.out.printf("Model name: %49s%n", model_name);
+        System.out.printf("Number of Error-log entries: %5d%n", num_err_log_entries);
+        System.out.printf("Media Errors: %18d%n", media_errors);
+        System.out.printf("Critical Warning: %14d%n", critical_warning);
+
+        analyseJSON.putOpt("model_name", model_name);
+        analyseJSON.putOpt("num_err_log_entries", num_err_log_entries);
+        analyseJSON.putOpt("media_errors", media_errors);
+        analyseJSON.putOpt("critical_warning", critical_warning);
+
         return analyseJSON;
     }
 
@@ -148,5 +155,30 @@ public class BillingRecords implements MessageReceiver {
             throw new JSONException("Error combining two JSON objects: " + e.getMessage());
         }
         return jsonObject;
+    }
+    private boolean isSmartCtlInstalled() {
+        ProcessBuilder pb = new ProcessBuilder("smartctl", "-V");
+        try {
+            Process proc = pb.start();
+            String version = new String(proc.getInputStream().readAllBytes());
+            if (version == null || version.isEmpty()) {
+                return false;
+            }
+            return true;
+        } catch (IOException e) {
+            log.info("smartctl: Something went wrong: " + e.getMessage());
+        }
+        return false;
+    }
+    private JSONObject readJsonLineByLine(String path, Integer lineCounter) {
+        String line;
+        JSONObject billingJSON = null;
+        try (Stream<String> lines = Files.lines(Paths.get(path))) {
+            line = lines.skip(lineCounter).findFirst().get();
+            billingJSON = new JSONObject(line);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return billingJSON;
     }
 }
