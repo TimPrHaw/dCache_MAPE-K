@@ -17,15 +17,11 @@ public abstract class MessageReceiverFactory {
         if (topic != null && !topic.isEmpty()) {
             if (receiverType.equalsIgnoreCase("KAFKA")) {
                 return new KafkaCons(topic, bootstrapServers);
-            } else if (receiverType.equalsIgnoreCase("JSON")) {
-                System.out.println("New JSON MessageReceiver");
-                // TODO: ADD Klasse die JSON werte liefert
-                // return JSON werte
-                return null;
             }
         }
-        System.out.println("New JSON MessageReceiver");
-        // return JSON werte
+        else if (receiverType.equalsIgnoreCase("BILLINGRECORDS")) {
+            return new BillingRecords();
+        }
         return null;
     }
 }

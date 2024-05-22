@@ -50,7 +50,7 @@ public class Consumer {
     }
 
     /**
-     * Default constructor using default broker URL.
+     * Default constructor using default local broker URL.
      * @throws JMSException If an error occurs during JMS operations.
      */
     public Consumer() throws JMSException {
@@ -66,7 +66,7 @@ public class Consumer {
     public void setup(Boolean isDestinationQueue, String destinationName) throws JMSException {
         setConnectionFactory(brokerURL, username, password);
         setConnection();
-        setSession(transacted, acknowledged);
+        setSession(this.transacted, acknowledged);
         setDestination(isDestinationQueue, destinationName);
         setMessageConsumer();
         log.info(this.getClass().getName()

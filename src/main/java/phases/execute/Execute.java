@@ -1,54 +1,78 @@
 package phases.execute;
 
-import JMS.Producer;
 import JMS.Consumer;
-import phases.analyze.Analyze;
+import org.json.JSONObject;
 
 import javax.jms.JMSException;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.logging.Logger;
 
-public class Execute {
-    private static final Logger log = Logger.getLogger(Analyze.class.getName());
+public class Execute implements Runnable{
+    private static final Logger log = Logger.getLogger(Execute.class.getName());
+    private final String URL = "http://localhost:3000/posts";
     private Consumer consumer = null;
-    private Producer producer = null;
-    private double value;
+    private HttpClient client = null;
+    private HttpRequest request = null;
+    private enum receivedAdaptation{
+        MIGRATION
+    }
 
-    public Execute(boolean queueBool, String inputQueue, String outputQueue) throws JMSException {
+    public Execute(boolean queueBool, String subscribedChannel) throws JMSException {
         this.consumer = new Consumer();
-        this.producer = new Producer();
-        consumer.setup(queueBool, inputQueue);
-        producer.setup(queueBool, outputQueue);
+        consumer.setup(queueBool, subscribedChannel);
+        this.client = HttpClient.newHttpClient();
     }
 
-    public void run() throws JMSException {
+    public Execute() throws JMSException {
+        this(true, "plan-execute-queue");
+    }
+
+    @Override
+    public void run(){
         while (true) {
-            var msg = consumer.receive();
-            exec((String) msg);
-            producer.sendMessage(getValue());
+            try {
+                String executionAction = null;
+                String messageReceived = (String)consumer.receive();
+                do {
+                    selectAdaptationAction(messageReceived);
+                } while(adaptationAction());
+
+            } catch (JMSException | IOException | InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    public double getValue() {
-        return value;
+    private String selectAdaptationAction(String messageReceived){
+        if(receivedAdaptation.MIGRATION.name().equals(messageReceived)){
+            JSONObject requstBody = new JSONObject();
+            JSONObject data = new JSONObject();
+            requstBody.put("name", "Migration");
+            data.put("Attribute 1", 123);
+            data.put("Attribute 2", "POST Request in Java");
+            requstBody.put("data", data);
+
+            request = HttpRequest.newBuilder()
+                    .POST(HttpRequest.BodyPublishers.ofString(requstBody.toString()))
+                    .uri(URI.create(URL))
+                    .header("Content-Type", "application/json")
+                    .build();
+        }
+        return null;
     }
 
-    private void exec(String input){
-        switch (input) {
-            case "reset":
-                this.value = -1;
-                break;
-            case "toHigh":
-                this.value = 3;
-                break;
-            case "toLow":
-                this.value = 2;
-                break;
-            case "okay":
-                this.value = 1;
-                break;
-            default:
-                this.value = 0;
+    private boolean adaptationAction() throws IOException, InterruptedException {
+        log.info("Send request to: " + URL);
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() == 200 || response.statusCode() == 201 || response.statusCode() == 202) {
+            log.info("Received statusCode: " + response.statusCode());
+            return false;
         }
-        log.info(this.getClass().getName() + " executed: " + input);
+        log.info("Received statusCode: " + response.statusCode() + ", message: " + response.body());
+        return true;
     }
 }

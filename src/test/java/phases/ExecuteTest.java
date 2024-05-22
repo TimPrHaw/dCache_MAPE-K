@@ -1,11 +1,13 @@
 package phases;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import phases.execute.Execute;
 
 import javax.jms.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.given;
 
 public class ExecuteTest {
 
@@ -13,10 +15,29 @@ public class ExecuteTest {
     private String queueName2 = "execute-test-queue-out";
 
     @Test
+    public void POST_test() throws JMSException {
+
+
+        // Test Producer
+        Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
+        testProducerConnection.start();
+        Session testPrducerSession = testProducerConnection.createSession();
+        Destination testProducerDestination = testPrducerSession.createQueue(queueName1);
+        MessageProducer testProducer = testPrducerSession.createProducer(testProducerDestination);
+
+        Execute execute= new Execute(true, queueName1);
+
+        String textMessage = "MIGRATION";
+        testProducer.send(testPrducerSession.createTextMessage(textMessage));
+
+        execute.run();
+    }
+
+    @Test
     public void testReset() throws JMSException {
         String textMessage = "reset";
 
-        Execute execute= new Execute(true, queueName1, queueName2);
+        Execute execute= new Execute(true, queueName1);
 
         // Test Producer
         Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
@@ -35,11 +56,7 @@ public class ExecuteTest {
         testProducer.send(testPrducerSession.createTextMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
-            try {
-                execute.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            execute.run();
         });
         analyzeThread.start();
 
@@ -55,7 +72,7 @@ public class ExecuteTest {
     public void testToHigh() throws JMSException {
         String textMessage = "toHigh";
 
-        Execute execute= new Execute(true, queueName1, queueName2);
+        Execute execute= new Execute(true, queueName1);
 
         // Test Producer
         Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
@@ -74,11 +91,7 @@ public class ExecuteTest {
         testProducer.send(testPrducerSession.createTextMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
-            try {
-                execute.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            execute.run();
         });
         analyzeThread.start();
 
@@ -94,7 +107,7 @@ public class ExecuteTest {
     public void testToLow() throws JMSException {
         String textMessage = "toLow";
 
-        Execute execute= new Execute(true, queueName1, queueName2);
+        Execute execute= new Execute(true, queueName1);
 
         // Test Producer
         Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
@@ -113,11 +126,7 @@ public class ExecuteTest {
         testProducer.send(testPrducerSession.createTextMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
-            try {
-                execute.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            execute.run();
         });
         analyzeThread.start();
 
@@ -133,7 +142,7 @@ public class ExecuteTest {
     public void testOkay() throws JMSException {
         String textMessage = "okay";
 
-        Execute execute= new Execute(true, queueName1, queueName2);
+        Execute execute= new Execute(true, queueName1);
 
         // Test Producer
         Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
@@ -152,11 +161,7 @@ public class ExecuteTest {
         testProducer.send(testPrducerSession.createTextMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
-            try {
-                execute.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            execute.run();
         });
         analyzeThread.start();
 
@@ -172,7 +177,7 @@ public class ExecuteTest {
     public void testDefault() throws JMSException {
         String textMessage = "Hello World";
 
-        Execute execute= new Execute(true, queueName1, queueName2);
+        Execute execute= new Execute(true, queueName1);
 
         // Test Producer
         Connection testProducerConnection = new ActiveMQConnectionFactory().createConnection();
@@ -191,11 +196,7 @@ public class ExecuteTest {
         testProducer.send(testPrducerSession.createTextMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
-            try {
-                execute.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            execute.run();
         });
         analyzeThread.start();
 

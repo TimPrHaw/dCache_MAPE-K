@@ -54,11 +54,7 @@ public class PlanTest {
 
         testMessageProducer.send(producerSession.createObjectMessage(textMessage));
         Thread analyzeThread = new Thread(() -> {
-            try {
-                plan.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            plan.run();
         });
         analyzeThread.start();
         Message incomingMessage = testMessageConsumer.receive(1000);
@@ -80,11 +76,7 @@ public class PlanTest {
         testMessageProducer.send(producerSession.createObjectMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
-            try {
-                plan.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            plan.run();
         });
         analyzeThread.start();
 
@@ -107,11 +99,7 @@ public class PlanTest {
         testMessageProducer.send(producerSession.createObjectMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
-            try {
-                plan.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            plan.run();
         });
         analyzeThread.start();
 

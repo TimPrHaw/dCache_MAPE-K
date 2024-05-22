@@ -7,6 +7,10 @@ import simulation.SimActor;
 import simulation.SimSensor;
 
 import javax.jms.JMSException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 public class Main {
     public static void main(String[] args) throws InterruptedException {
@@ -15,25 +19,22 @@ public class Main {
         String key = "key_1";
         boolean queueBool = true;
 
-        int simTicksInMilliSec = 3 * 1000;
-        int simStartTemp = 20;
-
         // Start Monitor
         new Thread(() -> {
             Monitor monitor;
             try {
-//                monitor = new Monitor("json", topic, bootstrapServer);
-                monitor = new Monitor("json");
+                monitor = new Monitor("billingrecords");
                 monitor.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
             }
         }).start();
         // Start Analyze
+
         new Thread(() -> {
             Analyze analyze;
             try {
-                analyze = new Analyze(queueBool, "analyze-queue", "plan-queue");
+                analyze = new Analyze();
                 analyze.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
@@ -43,7 +44,7 @@ public class Main {
         new Thread(() -> {
             Plan plan;
             try {
-                plan = new Plan(queueBool, "plan-queue", "execute-queue");
+                plan = new Plan();
                 plan.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
@@ -53,31 +54,11 @@ public class Main {
         new Thread(() -> {
             Execute execute = null;
             try {
-                execute = new Execute(queueBool, "execute-queue", "actor-queue");
+                execute = new Execute();
                 execute.run();
             } catch (JMSException e) {
                 throw new RuntimeException(e);
             }
         }).start();
-        // Start actor simulation
-        new Thread(() -> {
-            SimActor simActor;
-            try {
-                simActor = new SimActor(queueBool, "actor-queue", "sim-queue", simStartTemp);
-                simActor.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
-        }).start();
-        // Start sensor simulation
-//        new Thread(() -> {
-//            SimSensor simSensor;
-//            try {
-//                simSensor = new SimSensor(simTicksInMilliSec, simStartTemp, topic, bootstrapServer, key, queueBool, "sim-queue");
-//                simSensor.run();
-//            } catch (JMSException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }).start();
     }
 }

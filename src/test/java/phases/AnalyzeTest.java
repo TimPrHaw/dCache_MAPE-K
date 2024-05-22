@@ -40,11 +40,7 @@ public class AnalyzeTest {
         testProducer.send(testPrducerSession.createTextMessage(textMessage));
 
         Thread analyzeThread = new Thread(() -> {
-            try {
-                analyze.run();
-            } catch (JMSException e) {
-                throw new RuntimeException(e);
-            }
+            analyze.run();
         });
         analyzeThread.start();
 

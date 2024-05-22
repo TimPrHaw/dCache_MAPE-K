@@ -39,6 +39,7 @@ public class ProducerTest {
      */
     @After
     public void tearDown() throws Exception {
+        testProducer.setTransacted(false);
         testProducer.close();
         testMessageConsumerQueue.close();
     }
@@ -50,7 +51,7 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupNoTransactionQueue_SendShort_thenConsumeMessage() throws JMSException{
         short testInput = Short.MIN_VALUE;
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         Assert.assertEquals(((ObjectMessage) consumedMessage).getObject(), testInput);
@@ -63,7 +64,7 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupNoTransactionQueue_SendLong_thenConsumeMessage() throws JMSException{
         long testInput = Long.MAX_VALUE;
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         Assert.assertEquals(((ObjectMessage) consumedMessage).getObject(),testInput);
@@ -76,7 +77,7 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupNoTransactionQueue_SendChar_thenConsumeMessage() throws JMSException{
         char testInput = 'c';
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         Assert.assertEquals(((ObjectMessage) consumedMessage).getObject(),testInput);
@@ -90,7 +91,7 @@ public class ProducerTest {
     @Test
     public void testSendPriorityMessage_setupNoTransactionQueue_SendInt_thenConsumeMessage() throws JMSException, InterruptedException {
         String[] messages = {"Msg One", "Msg two", "Msg three", "Msg four", "Msg five"};
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(messages[2],4);
         testProducer.sendMessage(messages[1], 7);
         testProducer.sendMessage(messages[0], 9);
@@ -110,7 +111,7 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupNoTransactionQueue_SendInt_thenConsumeMessage() throws JMSException{
         int testInput = 22;
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         Assert.assertEquals(((ObjectMessage) consumedMessage).getObject(),testInput);
@@ -123,7 +124,7 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupNoTransactionQueue_SendDouble_thenConsumeMessage() throws JMSException{
         double testInput = 22.2;
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         var incMsg = ((ObjectMessage) consumedMessage).getObject();
@@ -137,7 +138,7 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupNoTransactionQueue_SendText_thenConsumeMessage() throws JMSException{
         String testInput = "Test Text";
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         Assert.assertEquals(((TextMessage) consumedMessage).getText(),testInput);
@@ -150,7 +151,8 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupWithTransactionQueue_SendTextAndCommit_thenConsumeMessage() throws JMSException{
         String[] testInput = {"Test1", "Test2", "Test3"};
-        testProducer.setup(true, true, queueName);
+        testProducer.setTransacted(true);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput[0]);
         testProducer.sendMessage(testInput[1]);
         testProducer.sendMessage(testInput[2]);
@@ -189,7 +191,7 @@ public class ProducerTest {
         testConsumer2.setMessageListener(consumer2);
 
         Producer testedProducer = new Producer();
-        testedProducer.setup(false, false, topicName);
+        testedProducer.setup(false, topicName);
         String testInput = "Test Text";
         testedProducer.sendMessage(testInput);
 
@@ -229,7 +231,8 @@ public class ProducerTest {
         testConsumer2.setMessageListener(consumer2);
 
         Producer testedProducer = new Producer();
-        testedProducer.setup(true, false, topicName);
+        testedProducer.setTransacted(true);
+        testedProducer.setup(false, topicName);
         String testInput = "Test Text";
         testedProducer.sendMessage(testInput);
         testedProducer.commitMessages();
@@ -254,7 +257,7 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupNoTransactionQueue_SendByte_thenConsumeMessage() throws JMSException{
         byte[] testInput = {10,20,30,40,50};
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         byte[] data = new byte[(int)((BytesMessage) consumedMessage).getBodyLength()];
@@ -269,7 +272,8 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupWithTransactionQueue_SendByteCommit_thenConsumeMessage() throws JMSException{
         byte[] testInput = {10,20,30,40,50};
-        testProducer.setup(true, true, queueName);
+        testProducer.setTransacted(true);;
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         testProducer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
@@ -294,7 +298,7 @@ public class ProducerTest {
         testInput.put("key_7", (Double) 7.7);
         testInput.put("key_8", (String) "value008");
         testInput.put("key_10", true);
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         Map<String, Object> map = new HashMap<>();
@@ -323,7 +327,8 @@ public class ProducerTest {
         testInput.put("key_7", (Double) 7.7);
         testInput.put("key_8", (String) "value008");
         testInput.put("key_10", true);
-        testProducer.setup(true, true, queueName);
+        testProducer.setTransacted(true);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         testProducer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
@@ -346,7 +351,7 @@ public class ProducerTest {
          Map<String, Object> testInput = new HashMap<>();
         byte[] producedByte = (byte[]) "value009".getBytes();
         testInput.put("key_9", producedByte);
-        testProducer.setup(false, true, queueName);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         byte[] consumedByte = (byte[]) ((MapMessage) consumedMessage)
@@ -363,7 +368,8 @@ public class ProducerTest {
         Map<String, Object> testInput = new HashMap<>();
         byte[] producedByte = (byte[]) "value009".getBytes();
         testInput.put("key_9", producedByte);
-        testProducer.setup(true, true, queueName);
+        testProducer.setTransacted(true);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         testProducer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
@@ -401,7 +407,8 @@ public class ProducerTest {
     @Test
     public void testSendMessage_setupWithTransactionQueue_SendStream_thenConsumeMessage() throws JMSException{
         Object[] testInput = {12, "StreamTest", '2'};
-        testProducer.setup(true, true, queueName);
+        testProducer.setTransacted(true);
+        testProducer.setup(true, queueName);
         testProducer.sendMessage(testInput);
         testProducer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
@@ -427,7 +434,7 @@ public class ProducerTest {
         String inputName = "John Doe";
         TestObjectClass testObjectClass = new TestObjectClass(inputNumber, inputName);
         Producer producer = new Producer();
-        producer.setup(false, true, queueName);
+        producer.setup(true, queueName);
         producer.sendMessage(testObjectClass);
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
         ObjectMessage aaa = ((ObjectMessage) consumedMessage);
@@ -446,7 +453,8 @@ public class ProducerTest {
         String inputName = "John Doe";
         TestObjectClass testObjectClass = new TestObjectClass(inputNumber, inputName);
         Producer producer = new Producer();
-        producer.setup(true, true, queueName);
+        producer.setTransacted(true);
+        producer.setup(true, queueName);
         producer.sendMessage(testObjectClass);
         producer.commitMessages();
         Message consumedMessage = testMessageConsumerQueue.receive(5000);
