@@ -1,6 +1,7 @@
 package phases.execute;
 
 import JMS.Consumer;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javax.jms.JMSException;
@@ -10,11 +11,15 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.logging.Logger;
+import java.util.Base64;
 
 public class Execute implements Runnable{
     private static final Logger log = Logger.getLogger(Execute.class.getName());
     private static final String DEFAULT_SUBSCRIBED_CHANNEL = "plan-execute-queue";
-    private static final String URL = "http://localhost:3000/posts"; // TODO: change the URL
+    private static final String URL = "http://localhost:3880/api/v1/migrations/copy";
+
+    private static final String dCACHE_SOURCE_POOL = "pool_write";
+    private static final String dCACHE_TARGET_POOLS = "pool_res2";
     private Consumer consumer = null;
     private HttpClient client = null;
     private HttpRequest request = null;
@@ -74,15 +79,16 @@ public class Execute implements Runnable{
     private void selectAdaptationAction(String messageReceived){
         if(receivedAdaptation.MIGRATION.name().equals(messageReceived)){
             JSONObject requstBody = new JSONObject();
-            JSONObject data = new JSONObject();
-            requstBody.put("name", "Migration");
-            data.put("Attribute 1", 123);
-            data.put("Attribute 2", "POST Request in Java");
-            requstBody.put("data", data);
+            JSONArray targetPools = new JSONArray();
+            targetPools.put(dCACHE_TARGET_POOLS);
+            requstBody.put("sourcePool", dCACHE_SOURCE_POOL);
+            requstBody.put("targetPools", targetPools);
+            String creds = "admin#admin:dickerelch";
 
             request = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofString(requstBody.toString()))
                     .uri(URI.create(URL))
+                    .header("Authorization", "Basic " + Base64.getEncoder().encodeToString(creds.getBytes()))
                     .header("Content-Type", "application/json")
                     .build();
         }
