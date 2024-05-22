@@ -1,6 +1,5 @@
 package phases.monitor;
 
-import JMS.Producer;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -14,13 +13,12 @@ import java.util.stream.Stream;
 public class BillingRecords implements MessageReceiver {
     private static final Logger log = Logger.getLogger(BillingRecords.class.getName());
     /**
-     * Find out the operating system type first (Linux, MacOS, not supported: Windows)
+     * Find out the operating system type first (supported Linux , not supported: Windows, MacOS)
      */
     private final static String OS_TYPE = System.getProperty("os.name").toLowerCase();
-    private  MessageReceiver messageReceiver;
-    private Producer producer;
     private Integer lineCounter;
-    private final Integer THREAD_SLEEP_TIME = 5000;
+
+    private boolean mocking_smartctl = false;
 
     /**
      * Path to the billing file TODO:!!!!! PLEASE CHANGE THIS PATH TO YOUR LOCAL PATH !!!!!
@@ -31,10 +29,11 @@ public class BillingRecords implements MessageReceiver {
 
 
     public BillingRecords() {
-        log.info("OS_TYPE is: %24s%n" + OS_TYPE);
+        log.info("OS_TYPE is: " + OS_TYPE);
 
-        if (!OS_TYPE.contains("nux") && !OS_TYPE.contains("darwin")) {
+        if (!OS_TYPE.contains("nux")) {
             System.out.println("OS not supported!");
+            mocking_smartctl = true;
             System.exit(1);
         }
         this.lineCounter = 0;
@@ -69,7 +68,7 @@ public class BillingRecords implements MessageReceiver {
             e.printStackTrace();
         }
         lineCounter++;
-        if (lineCounter == LINES_IN_BILLING_RECORD) {
+        if (lineCounter >= LINES_IN_BILLING_RECORD) {
             lineCounter = 0;
         }
         if (billingJSON == null || billingJSON.isEmpty()){
@@ -127,21 +126,7 @@ public class BillingRecords implements MessageReceiver {
             analyseJSON.putOpt("media_errors", media_errors);
             analyseJSON.putOpt("critical_warning", critical_warning);
             System.out.println(analyseJSON);
-        }
-        else if (OS_TYPE.contains("darwin")) {
-            //todo: implement for MacOS
-//            ProcessBuilder pb1 = new ProcessBuilder("lsblk", "-n", "--output", "NAME", "--nodeps");
-//            Process proc1 = pb1.start();
-//            String device = new String(proc1.getInputStream().readAllBytes());
-//            System.out.println(device.trim());
-//            ProcessBuilder pb2 = new ProcessBuilder("sudo", "smartctl", "-j", "-a", "/dev/" + device.trim());
-//            Process proc2 = pb2.start();
-//            String jsonString = new String(proc2.getInputStream().readAllBytes());
-//            System.out.println(jsonString);
-//            JSONObject jsonObject = new JSONObject(jsonString);
-//            System.out.println(jsonObject);
-//            System.out.println(jsonObject.get("serial_number"));
-//            System.out.println(jsonObject.getJSONObject("temperature").get("current"));
+
         }
         return analyseJSON;
     }
@@ -158,6 +143,7 @@ public class BillingRecords implements MessageReceiver {
             for (String key : JSONObject.getNames(jsonObject2)) {
                 jsonObject.put(key, jsonObject2.get(key));
             }
+            log.info("Combined JSON object: " + jsonObject.toString());
         } catch (JSONException e) {
             throw new JSONException("Error combining two JSON objects: " + e.getMessage());
         }

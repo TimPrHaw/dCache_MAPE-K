@@ -45,7 +45,7 @@ public class Analyze implements Runnable{
     }
 
     private boolean isAdaptationRequired(){
-        return this.lastCriticalWarning != monitorData.getInt("criticalWarning") || this.lastNumErrLogEntries != monitorData.getInt("numErrLogEntries") || this.lastMediaErrors != monitorData.getInt("mediaErrors");
+        return this.lastCriticalWarning != monitorData.getInt("critical_warning") || this.lastNumErrLogEntries != monitorData.getInt("num_err_log_entries") || this.lastMediaErrors != monitorData.getInt("media_errors");
     }
 
     private String decisionFunction() {
@@ -66,7 +66,7 @@ public class Analyze implements Runnable{
 
         if(u <= 500){
             return "fine";
-        } else if (u > 500 && u <= 550) {
+        } else if (u > 500 && u <= 550) { // TODO: final static int
             return "case1";
         } else if (u > 550 && u <= 600) {
             return "case2";
@@ -85,9 +85,9 @@ public class Analyze implements Runnable{
         if (analyzedData != null || !analyzedData.equals("fine")) {
             log.info(this.getClass().getSimpleName() + " send: " + analyzedData);
             producer.sendMessage(analyzedData);
-            lastCriticalWarning = monitorData.getInt("criticalWarning");
-            lastNumErrLogEntries = monitorData.getInt("numErrLogEntries");
-            lastMediaErrors = monitorData.getInt("mediaErrors");
+            lastCriticalWarning = monitorData.getInt("critical_warning");
+            lastNumErrLogEntries = monitorData.getInt("num_err_log_entries");
+            lastMediaErrors = monitorData.getInt("media_errors");
         }
     }
 }

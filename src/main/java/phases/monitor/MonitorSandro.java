@@ -1,3 +1,4 @@
+/*
 package phases.monitor;
 
 import org.json.JSONException;
@@ -24,14 +25,16 @@ public class MonitorSandro {
         System.out.println(smartctl_output_json);
     }
 
-    /**
+    */
+/**
      * This method returns a json object containing the status of the system's disk
      * @return JSONObject (can be empty, if keys or values are null) or null
      * @throws IOException
      * @throws NullPointerException
      * @throws UnsupportedOperationException
      *
-     */
+     *//*
+
     public JSONObject getDiskInfo() throws IOException, NullPointerException, UnsupportedOperationException, JSONException {
 
         JSONObject jsonObject = null;
@@ -102,3 +105,4 @@ public class MonitorSandro {
 
 
 }
+*/

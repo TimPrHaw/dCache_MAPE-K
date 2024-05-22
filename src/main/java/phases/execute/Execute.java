@@ -35,7 +35,7 @@ public class Execute implements Runnable{
     public void run(){
         while (true) {
             try {
-                String executionAction = null;
+                String executionAction = null; //TODO: delete?
                 String messageReceived = (String)consumer.receive();
                 do {
                     selectAdaptationAction(messageReceived);
