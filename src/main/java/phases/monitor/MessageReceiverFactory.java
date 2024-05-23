@@ -19,8 +19,8 @@ public abstract class MessageReceiverFactory {
                 return new KafkaCons(topic, bootstrapServers);
             }
         }
-        else if (receiverType.equalsIgnoreCase("BILLINGRECORDS")) {
-            return new BillingRecords();
+        else if (receiverType.equalsIgnoreCase("DataIngressHandler")) {
+            return new DataIngressHandler();
         }
         return null;
     }

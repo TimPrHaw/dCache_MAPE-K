@@ -18,6 +18,8 @@ public class Execute implements Runnable{
     private static final String DEFAULT_SUBSCRIBED_CHANNEL = "plan-execute-queue";
     private static final String URL = "http://localhost:3880/api/v1/migrations/copy";
 
+    private static final Integer SEND_RETRY_INTERVALL = 5000; // 5 seconds
+
     private static final String dCACHE_SOURCE_POOL = "pool_write";
     private static final String dCACHE_TARGET_POOLS = "pool_res2";
     private Consumer consumer = null;
@@ -100,13 +102,26 @@ public class Execute implements Runnable{
      * @return true if the action needs to be retried, otherwise false.
      * @throws IOException if there is an error in sending the HTTP request.
      * @throws InterruptedException if the HTTP request is interrupted.
+     * @throws RuntimeException if there is an error in sending the HTTP request.
      */
-    private boolean adaptationAction() throws IOException, InterruptedException {
+    private boolean adaptationAction() throws IOException, InterruptedException, RuntimeException {
+        HttpResponse<String> response = null;
         log.info("Send request to: " + URL);
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() == 200 || response.statusCode() == 201 || response.statusCode() == 202) {
+        try {
+            response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (IOException | RuntimeException | InterruptedException e) {
+            log.info(this.getClass().getSimpleName() + ": " + e.getMessage());
+            log.info("ERROR sending request to: " + URL + ", retrying in " + SEND_RETRY_INTERVALL + " seconds...");
+            Thread.sleep(SEND_RETRY_INTERVALL);
+            return true;
+        }
+        if (response != null && (response.statusCode() == 200 || response.statusCode() == 201 || response.statusCode() == 202)) {
             log.info("Received statusCode: " + response.statusCode());
             return false;
+        }
+        else if (response == null) {
+            log.info("Received response is null!" );
+            return true;
         }
         log.info("Received statusCode: " + response.statusCode() + ", message: " + response.body());
         return true;

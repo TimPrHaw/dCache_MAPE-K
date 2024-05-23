@@ -9,10 +9,10 @@ import java.util.logging.Logger;
 
 public class Analyze implements Runnable{
     private static final Logger log = Logger.getLogger(Analyze.class.getName());
-    private static final int CRITICAL_WARNING_THRESHOLD = 330;
-    private static final int MINIMAL_UTILITY_THRESHOLD = 0;//500;
-    private static final int MEDIUM_UTILITY_THRESHOLD = 5;//550;
-    private static final int MAXIMAL_UTILITY_THRESHOLD = 10;//600;
+    private static final int CRITICAL_WARNING_THRESHOLD = 330;  //TODO: change to whatever is reasonable
+    private static final int MINIMAL_UTILITY_THRESHOLD = 0;//500; //TODO: change to whatever is reasonable
+    private static final int MEDIUM_UTILITY_THRESHOLD = 5;//550; //TODO: change to whatever is reasonable
+    private static final int MAXIMAL_UTILITY_THRESHOLD = 10;//600; //TODO: change to whatever is reasonable
     private static final double NUM_ERR_LOG_ENTRIES_WEIGHT = 0.2;
     private static final double MEDIA_ERRORS_WEIGHT = 0.25;
     private static final double CRITICAL_WARNING_WEIGHT = 0.7;

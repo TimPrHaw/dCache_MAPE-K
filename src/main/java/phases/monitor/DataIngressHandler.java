@@ -2,7 +2,6 @@ package phases.monitor;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -10,8 +9,8 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 
-public class BillingRecords implements MessageReceiver {
-    private static final Logger log = Logger.getLogger(BillingRecords.class.getName());
+public class DataIngressHandler implements MessageReceiver {
+    private static final Logger log = Logger.getLogger(DataIngressHandler.class.getName());
     /**
      * Find out the operating system type first (supported Linux , not supported: Windows, MacOS)
      */
@@ -22,16 +21,16 @@ public class BillingRecords implements MessageReceiver {
     private boolean mockingSmartCtl = false;
 
     /**
-     * Path to the billing file TODO:!!!!! PLEASE CHANGE THIS PATH TO YOUR LOCAL PATH !!!!!
+     * Path to the billing/smart file TODO:!!!!! PLEASE CHANGE THESE PATHS TO YOUR LOCAL PATHS !!!!!
      */
-    private final String billingPath = "./dcache-build-75393-billing.json";
-    private final String smartPath = "./smart_one_line.json";
+    private static final String billingPath = "./dcache-build-75393-billing.json";
+    private static final String smartPath = "./smart_values_mocked.json";
 
-    private final int LINES_IN_BILLING_RECORD = 2000;
-    private final int LINES_IN_SMART_RECORD = 1;//20; //TODO: change to whatever is needed
+    private static final int LINES_IN_BILLING_RECORD = 2000; // 2000 lines in dcache-build-75393-billing.json
+    private static final int LINES_IN_SMART_RECORD = 30; // 30 lines in smart_values_mocked.json
 
 
-    public BillingRecords() {
+    public DataIngressHandler() {
         log.info("OS_TYPE is: " + OS_TYPE);
 
         if (!isSmartCtlInstalled() || !OS_TYPE.contains("nux")) {
@@ -82,7 +81,7 @@ public class BillingRecords implements MessageReceiver {
 
     /**
      * This method returns a json object containing status information about the system's disk
-     * @return JSONObject (can be empty, if keys or values are null) or null
+     * @return JSONObject (can be empty)
      * @throws IOException
      * @throws NullPointerException
      * @throws UnsupportedOperationException
@@ -140,11 +139,11 @@ public class BillingRecords implements MessageReceiver {
 
     /**
      * This method returns a json object combining two input json objects
-     * @return JSONObject or null
+     * @return JSONObject (can be empty)
      * @throws JSONException
      */
     private JSONObject combineTwoJsonObjects(JSONObject jsonObject1, JSONObject jsonObject2) throws JSONException{
-        JSONObject jsonObject = null;
+        JSONObject jsonObject = new JSONObject();
         try {
             jsonObject = new JSONObject(jsonObject1, JSONObject.getNames(jsonObject1));
             for (String key : JSONObject.getNames(jsonObject2)) {
@@ -152,10 +151,15 @@ public class BillingRecords implements MessageReceiver {
             }
             log.info("Combined JSON object: " + jsonObject.toString());
         } catch (JSONException e) {
-            throw new JSONException("Error combining two JSON objects: " + e.getMessage());
+            log.info("Error combining two JSON objects: " + e.getMessage());
+            return new JSONObject();
         }
         return jsonObject;
     }
+    /**
+     * This method checks if smartctl is installed on the system
+     * @return boolean true if smartctl is installed, otherwise false
+     */
     private boolean isSmartCtlInstalled() {
         ProcessBuilder pb = new ProcessBuilder("smartctl", "-V");
         try {
@@ -170,14 +174,21 @@ public class BillingRecords implements MessageReceiver {
         }
         return false;
     }
+    /**
+     * This method reads a json file line by line
+     * @param path the path to the json file
+     * @param lineCounter the line number to read
+     * @return JSONObject (can be empty)
+     */
     private JSONObject readJsonLineByLine(String path, Integer lineCounter) {
         String line;
-        JSONObject billingJSON = null;
+        JSONObject billingJSON = new JSONObject();
         try (Stream<String> lines = Files.lines(Paths.get(path))) {
             line = lines.skip(lineCounter).findFirst().get();
             billingJSON = new JSONObject(line);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException | JSONException e) {
+            log.info("Error reading file: " + path + ":" + e.getMessage());
+            return new JSONObject();
         }
         return billingJSON;
     }

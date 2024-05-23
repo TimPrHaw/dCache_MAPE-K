@@ -11,7 +11,7 @@ public class Monitor implements Runnable {
     private static final Logger log = Logger.getLogger(Monitor.class.getName());
     private final MessageReceiver messageReceiver;
     private final Producer producer;
-    private final Integer THREAD_SLEEP_TIME = 5000;
+    private final Integer MONITORING_INTERVALL = 5000; // 5 seconds
     private static final String DEFAULT_PUBLISHED_CHANNEL = "monitor-analyze-queue";
 
 
@@ -73,7 +73,7 @@ public class Monitor implements Runnable {
             try {
                 JSONObject receivedJSON = messageReceiver.receiveMessage();
                 sendMessageToJMS(receivedJSON);
-                Thread.sleep(THREAD_SLEEP_TIME);
+                Thread.sleep(MONITORING_INTERVALL);
             } catch (NullPointerException | UnsupportedOperationException | JSONException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
